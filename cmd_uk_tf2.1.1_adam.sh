@@ -16,6 +16,7 @@
 export NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1)
 export BIDS_DIR=/home/atrefo/scratch/UKBBIDS
 
+module load java/1.8.0_192
 module load nextflow/20.04.1
 module load singularity/3.6
 
