@@ -1,17 +1,24 @@
 #!/bin/bash
+
+if test $# -lt 2 ; then
+   usage
+   exit 2
+fi
+
 bidsIN=$1
 bidsOUT=$2
 
 # Create symlinktree
 cp -rs ${bidsIN} ${bidsOUT}
 
-# Clean up subs that are missing the PA_dwi.json files
+# Clean up: remove symlinks for subs that are missing the PA_dwi.json files
 for sub in $(find ${bidsOUT} -maxdepth 1 -type d -iname "sub-*" -printf %P"\n" )
 do
 	if [ ! -f "${bidsIN}/${sub}/ses-2/dwi/${sub}_ses-2_acq-PA_dwi.json" ] ; then
 		rm -r ${bidsOUT}/"${sub}"
 	fi
 done
+
 # Main loop
 for sub in $(find ${bidsOUT} -maxdepth 1 -type d -iname "sub-*" -printf %P"\n" )
 do
