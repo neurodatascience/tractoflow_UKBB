@@ -8,8 +8,8 @@
 #SBATCH --mail-type=REQUEUE
 #SBATCH --mail-type=ALL
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=20
-#SBATCH --mem=80G
+#SBATCH --cpus-per-task=40
+#SBATCH --mem=160G
 #SBATCH --time=100:00:00
 
 export NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1)
