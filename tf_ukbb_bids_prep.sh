@@ -1,9 +1,19 @@
 #!/bin/bash
 
 # This  script is intended to be run from within a singularity shell session that
-# mounts the neurohub UKBB squash images.
+# mounts the neurohub UKBB squash images, the shell script "tf_shell_ext3.sh" can
+# be used for this.
 # Once it is finished the resulting symlink farm can be squashed up and overlayed 
 # onto the tractoflow singularity container to run the pipeline.
+#
+## TODO:
+## Error control:
+### 1. check for existing symlinktree directory, only create if needed
+### 2. Do something more inteligent with the subjects with missing PA_dwi.json files
+## NiceToHaves:
+### 1. include this script into a singularity image that also includes
+### scil_extract_b0.py
+### 2. Add routine
 
 workDIR="/scratch/atrefo/sherbrooke/symtree"
 bidsIN="/neurohub/ukbb/imaging"
@@ -13,10 +23,11 @@ bidsOUT="${workDIR}/neurohub/ukbb/imaging"
 
 # Create symlinktree
 #echo "Creating symlink tree"
-#cp -rs /neurohub ${workDIR}
+# cp -rs /neurohub ${workDIR}
 
 # Clean up subs that are missing the PA_dwi.json files
 # (Once the DTI BIDS is cleaned up this shoudn't be needed)
+#
 echo "removing links to subjects with missing PA_dwi.json files ..."
 for sub in $(find ${bidsOUT} -maxdepth 1 -type d -iname "sub-*" -printf %P"\n" )
 do
