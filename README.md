@@ -32,7 +32,7 @@ Squashfs files are, by design read-only, and of course we don't want to mess wit
 ```
 I deleted the symlinks that pointed to the PA direction files and saved that as a squashfs image.  By overlaying that squashfs onto the contianer along with the UKBB squashfs images I can point at the file tree in it 
 #### Missing PA_dwi.json files
-There are about 8,000 subjects in the UKBB dataset without `*PA_dwi.json` files.  I simply ignored these subjects by removing the symlinks that point to their BIDS directory
+There are about 8,000 subjects in the UKBB dataset without `*PA_dwi.json` files.  I simply ignored these subjects by removing the symlinks that point to their BIDS directory.  When the dwi dataset has been cleaned up by Lex the `tf_ukbb_bids_prep.sh` script will need to be re-run.  A check for already existing files could (should?) be run so we're not duplicating effort and also it's possible (likely?) that `scil_extract_b0.py`will have different results each time it's run.
 
 ### inode Limits
 #### ext3 writable file system images
