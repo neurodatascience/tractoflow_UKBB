@@ -36,3 +36,6 @@ There are about 8,000 subjects in the UKBB dataset without `*PA_dwi.json` files.
 
 ### inode Limits
 #### ext3 writable file system images
+### Performance and Scalability
+#### Slurm Resource Allocation
+#### Sweet Spot
