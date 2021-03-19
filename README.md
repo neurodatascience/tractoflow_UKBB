@@ -11,8 +11,8 @@ Debugging wrapper script that is identical to [tf_run_ext3.sh](https://github.co
 ### [tf_ukbb_bids_prep.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_ukbb_bids_prep.sh)
 *To be run inside a singularity shell session using the Tractoflow container* Prepares a working environment in the format that Tractoflow expects.  Specifically, it creates a symlink tree that is populated with links to the (squashfs overlayed) Neurohub UKB BIDS directories, which is to be used as the BIDS directory, it runs [scil_extract_b0.py](https://github.com/scilus/scilpy/blob/master/scripts/scil_extract_b0.py) , and creates `fmap/"${sub}"_ses-2_acq-PA_epi.json` 
 ### Issues and Solutions
-On beluga the UKBiobank dataset is stored in squashfs files and are accessed by *overlay* mounting them within a singularity container.  The Tractoflow pipeline requires [Nextflow](https://www.nextflow.io) to manage the pipeline.  In the default configuration Tractoflow runs within a singularity container that is launched by nextflow.  This was impossible to run with the UKBB squashed dataset.  Nextflow would not pass the --overlay directives down to the singularithy instance.  My solution is to invert the relationship: I run a Tractoflow singularity container that includes Nextflow in it.  In this way I can get the squashfs files overlayed onto the container instance, define a BIDS compliant directory at the root, and run the Tractoflow pipeline on that.
-#### dwi correction
+On beluga the UKBiobank dataset is stored in squashfs files and are accessed by *overlay* mounting them within a singularity container.  The Tractoflow pipeline requires [Nextflow](https://www.nextflow.io) to manage the pipeline.  In the default configuration Tractoflow runs within a singularity container that is launched by nextflow.  This was impossible to run with the UKBB squashed dataset.  Nextflow would not pass the --overlay directives down to the singularithy instance.  My solution is to invert the relationship: I run a Tractoflow singularity container that includes Nextflow in it.  In this way I can get the squashfs files overlayed onto the container instance, define a Tractoflow friendly BIDS compliant directory at the root, and run the Tractoflow pipeline on that.
+#### DWI Correction
 I was not able to get a complete run of Tractoflow on the UKBB BIDS dataset.  It failed, according to Arnaud, because tractoflow is not ready yet for a full AP/PA dwi correction and ends up with conflicts. He suggested that we do the following:
 	
 Choose which direction (AP or PA) will be the "main" direction.
@@ -43,7 +43,10 @@ I deleted the symlinks that pointed to the PA direction files and saved that as 
 There are about 8,000 subjects in the UKBB dataset without `*PA_dwi.json` files.  I simply ignored these subjects by removing the symlinks that point to their BIDS directory.  When the dwi dataset has been cleaned up by Lex the `tf_ukbb_bids_prep.sh` script will need to be re-run.  A check for already existing files could (should?) be run so we're not duplicating effort and also it's possible (likely?) that `scil_extract_b0.py`will have different results each time it's run.
 
 ### inode Limits
-#### ext3 writable file system images
+Because beluga uses the Lustre distributed file system performance suffers significantly with lots of files and inode quotas are strictly enforced.  Tractoflow generartes 109 files for each subject.  A complete run of all 40,000 subjects would have an adverse effect on the performance of the file system, as well as running us over quota eventually.
+### Process Run Time
+Beluga enforces a strict 7 day limit on process run time.  While Tractoflow has implemented a "resume" routine the method leaves orphaned files when it is resumed after being killed.  In my testing the file count and bit count exploded with only a few killed runs.  There is no on the fly garbage cleanup built in.  There is no slurm style checkpointing and so runing slurm arrays is not  useful.
+#### ext3 writable file system imagest
 ### Performance and Scalability
 #### Slurm Resource Allocation
 #### Sweet Spot
