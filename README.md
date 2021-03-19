@@ -12,7 +12,7 @@ Choose which direction (AP or PA) will be the "main" direction.
 2. Remove the "old", `PA` direction files from `/dwi`
 3. Create a json file for this new file with the `intendedFor` key pointing to your `/dwi` and phaseEncodingDirection as well with opposite direction
 
-Squashfs files are, by design read-only, so to make this work I created the symlink tree illustrated below, and performed those operations into that tree with the `tf_ukbb_bids_prep.sh` script.
+Squashfs files are, by design read-only, and of course we don't want to mess with the UKBB raw files, so to make this work I created the symlink tree `/scratch/atrefo/sherbrooke/symtree`, illustrated below, and performed those operations into that tree using the `tf_ukbb_bids_prep.sh` script.
 
 ``` 
 /neurohub/ukbb/imaging/sub-*/ses-2/
