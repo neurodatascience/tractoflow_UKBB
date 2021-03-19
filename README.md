@@ -32,5 +32,5 @@ I deleted the symlinks that pointed to the PA direction files and saved that as 
 #### Missing PA_dwi.json files
 There are about 8,000 subjects in the UKBB dataset without `*PA_dwi.json` files.  I simply ignored these subjects by removing the symlinks that point to their BIDS directory
 
-### File Limits
+### inode Limits
 #### ext3 writable file system images
