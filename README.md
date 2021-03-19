@@ -47,6 +47,7 @@ Because beluga uses the Lustre distributed file system performance suffers signi
 ### Process Run Time
 Beluga enforces a strict 7 day limit on process run time.  While Tractoflow has implemented a "resume" routine the method leaves orphaned files when it is resumed after being killed.  In my testing the file count and bit count exploded with only a few killed runs.  There is no on the fly garbage cleanup built in.  There is no slurm style checkpointing and so runing slurm arrays is not  useful.
 #### ext3 writable file system images
+
 ### Performance and Scalability
 #### Slurm Resource Allocation
 #### Sweet Spot
