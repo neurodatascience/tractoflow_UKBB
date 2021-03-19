@@ -2,15 +2,17 @@
 Workflow and utilities to prepare the UKBB dataset for [Tractoflow](https://github.com/scilus/tractoflow) pre-processing
 
 On beluga the UKBiobank dataset is stored in squashfs files and are accessed by *overlay* mounting them within a singularity container.  The Tractoflow pipeline requires [Nextflow](https://www.nextflow.io) to manage the pipeline.  In the default configuration Tractoflow runs within a singularity container that is launched by nextflow.  This was impossible to run with the UKBB squashed dataset.  Nextflow would not pass the --overlay directives down to the singularithy instance.  My solution is to invert the relationship: I run a Tractoflow singularity container that includes Nextflow in it.  In this way I can get the squashfs files overlayed onto the container instance, define a BIDS compliant directory at the root, and run the Tractoflow pipeline on that.
-## Issues and Solutions
+## Scripts
 ### `tf_ukbb_bids_prep.sh`
+(To be run inside a singularity shell session using the Tractoflow container) Prepares a symlink tree to use as the BIDS directory in the format that Tractoflow expects.  Specifically, it creates a symlink tree that is populated with links to the (squashfs overlayed) Neurohub UKB BIDS directories, runs [scil_extract_b0.py](https://github.com/scilus/scilpy/blob/master/scripts/scil_extract_b0.py) , and creates `fmap/"${sub}"_ses-2_acq-PA_epi.json` 
+### Issues and Solutions
 #### dwi correction
 I was not able to get a complete run of Tractoflow on the UKBB BIDS dataset.  It failed, according to Arnaud, because tractoflow is not ready yet for a full AP/PA dwi correction and ends up with conflicts. He suggested that we do the following:
 	
 Choose which direction (AP or PA) will be the "main" direction.
-1. use scil_extract_b0.py that's included in the Tractoflow singularity container to extract the file called `fmap/sub-*_epi.nii.gz`. 
+1. use `scil_extract_b0.py` that's included in the Tractoflow singularity container to extract the file called `fmap/sub-*_epi.nii.gz`. 
 2. Remove the "old", `PA` direction files from `/dwi`
-3. Create a json file for this new file with the `intendedFor` key pointing to your `/dwi` and phaseEncodingDirection as well with opposite direction
+3. Create a json file for this new file with the `IntendedFor` key pointing to the subject's `/dwi`
 
 Squashfs files are, by design read-only, and of course we don't want to mess with the UKBB raw files, so to make this work I created the symlink tree `/scratch/atrefo/sherbrooke/symtree`, illustrated below, and performed those operations into that tree using the `tf_ukbb_bids_prep.sh` script.
 
