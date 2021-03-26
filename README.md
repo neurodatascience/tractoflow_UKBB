@@ -96,11 +96,14 @@ Producing output similar to this:
 ...
 ```
 I then ran a UNIX `comm` , (compare) to pull out any disimilar lines:
+
 `comm -3 zaaa_f_sizes.tsv zaaa-test_f_sizes.tsv`
+
 I found that there are 38 files for each subject that differs in bit size.  See [zaaa-f_differ.tsv](zaaa-f_differ.tsv) for the list.
 
 ### Logs
-
+*Stuff about logging here, ie.: some logs are going into the ext3 image, some are being written to the filesystem, there is method to the madness, document it*
 ### Performance and Scalability
+*stuff about why 4 subjects is sweet sweet majik*
 #### Slurm Resource Allocation
 #### Sweet Spot
