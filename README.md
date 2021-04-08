@@ -54,9 +54,9 @@ Beluga enforces a strict 7 day limit on process run time.  While Tractoflow has 
 #### ext3 writable file system images
 For each run of 4 subjects I create a 20GB ext3 filesystem image to be used to capture the output from the run.
 
-A 2TB ext3 image is created for every 1000 subjects
+A 2TB ext3 image is created for every 480 subjects (120 runs)
 
-When 1000 runs have been completed the 1000 ext3 images get mounted into a singularity container along with an empty 2TB ext3 image
+When 120 runs have been completed the 120 ext3 images get mounted into a singularity container along with an empty 2TB ext3 image
 
 rsync is run to move the files out of the work directory from each subject and into the 2TB image.  At the minimum the following file and paths need to be retained:
 
@@ -101,6 +101,7 @@ I then ran a UNIX `comm` , (compare) to pull out any disimilar lines:
 
 I found that there are 38 files for each subject that differs in bit size.  See [zaaa-f_differ.tsv](zaaa-f_differ.tsv) for the list.
 
+Guillaume found an error in the way the random seed was being set 
 ### Logs
 *Stuff about logging here, ie.: some logs are going into the ext3 image, some are being written to the filesystem, there is method to the madness, document it*
 ### Performance and Scalability
