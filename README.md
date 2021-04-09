@@ -101,9 +101,18 @@ I then ran a UNIX `comm` , (compare) to pull out any disimilar lines:
 
 I found that there are 38 files for each subject that differs in bit size.  See [zaaa-f_differ.tsv](zaaa-f_differ.tsv) for the list.
 
-Guillaume found an error in the way the random seed was being set 
+Guillaume confirmed the irreproducibility problem and found an error in the way the random seed was being set and updated the `main.nf` file with:
+
+`export ANTS_RANDOM_SEED=1234` https://github.com/scilus/tractoflow/pull/46
+
+Guillaume ran four subjects twice and confirmed that there the runs were identical. Adam is running a similar test with an updated container supplied by Arnaud
+
 ### Logs
 *Stuff about logging here, ie.: some logs are going into the ext3 image, some are being written to the filesystem, there is method to the madness, document it*
+
+Nextflow logs
+surm.out
+
 ### Performance and Scalability
 *stuff about why 4 subjects is sweet sweet majik*
 #### Slurm Resource Allocation
