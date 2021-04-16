@@ -9,6 +9,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=2G
 #SBATCH --time=1-12:00:00
+#SBATCH --output=slurm_out/%x-%j.out
 
 # --time is set to 36 hours, (1-12:00:00) with the assumption that these runs should take 21 hours
 # with some slop
