@@ -41,7 +41,7 @@ BIDS_DIR="$TASK_ROOT/fake_bids/dwi_subs-${FB}"
 cd $TASK_ROOT || exit
 cd $BIDS_DIR || exit
 
-SING_TF_IMAGE=$TASK_ROOT/tractoflow_2.1.0_feb64b9_2020-05-29.img
+SING_TF_IMAGE=$TASK_ROOT/tractoflow.sif
 
 # UKBB squashfs files
 UKBB_SQUASHFS_DIR=/project/6008063/neurohub/ukbb/imaging
