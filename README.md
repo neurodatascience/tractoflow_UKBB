@@ -52,11 +52,14 @@ Because beluga uses the Lustre distributed file system performance suffers signi
 Beluga enforces a strict 7 day limit on process run time.  While Tractoflow has implemented a "resume" routine the method leaves orphaned files when it is resumed after being killed.  In my testing the file count and bit count exploded with only a few killed runs.  There is no on the fly garbage cleanup built in.  There is no slurm style checkpointing and so runing slurm arrays is not  useful.
 
 #### ext3 writable file system images
-For each run of 4 subjects I create a 20GB ext3 filesystem image to be used to capture the output from the run.
+For each run of 4 subjects I create a 20GB ext3 filesystem image to be used to capture the output from the run. 
 
-A 2TB ext3 image is created for every 480 subjects (120 runs)
+From inside an ubuntu singularity image this command is run to create 240 initial ext3 images:
 
-When 120 runs have been completed the 120 ext3 images get mounted into a singularity container along with an empty 2TB ext3 image
+`for i in {00000..00239}; do echo "mkfs.ext3 -d top -F -m 0 -b 4096 -N 100000 ./TF-raw-$i.img 20g"; done`
+
+
+Approximately 80 2TB ext3 images will be created, one for every 480 subjects (120 runs).  When 120 runs have been completed the 120 ext3 images get mounted into a singularity container along with an empty 2TB ext3 image.  The derivative files will be rsynced from the 20GB images into the 2TB image.  This will then be saved as a squashfs image as described below: NOTE: *Describe it*
 
 rsync is run to move the files out of the work directory from each subject and into the 2TB image.  At the minimum the following file and paths need to be retained:
 
@@ -105,13 +108,14 @@ Guillaume confirmed the irreproducibility problem and found an error in the way 
 
 `export ANTS_RANDOM_SEED=1234` https://github.com/scilus/tractoflow/pull/46
 
-Guillaume ran four subjects twice and confirmed that there the runs were identical. Adam is running a similar test with an updated container supplied by Arnaud
-
+Guillaume ran four subjects twice and confirmed that there the runs were identical. Adam ran a similar test with an updated container supplied by Arnaud and there were no differences in file size between the two runs. 
+## Running Environment Setup
+*Simple bash loop is used to submit sbatch tf_run_ext3.sh jobs 
 ### Logs
 *Stuff about logging here, ie.: some logs are going into the ext3 image, some are being written to the filesystem, there is method to the madness, document it*
 
 Nextflow logs
-surm.out
+slurm.out
 
 ### Performance and Scalability
 *stuff about why 4 subjects is sweet sweet majik*
