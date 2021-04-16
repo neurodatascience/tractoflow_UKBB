@@ -10,12 +10,12 @@
 #SBATCH --mem-per-cpu=2G
 #SBATCH --time=1-12:00:00
 
-# --time is set with the assumption that these runs should take 21 hours
+# --time is set to 36 hours, (1-12:00:00) with the assumption that these runs should take 21 hours
 # with some slop
-# This version of the script writes to a loopback mounted ext3 image
+# This version of the script writes to a loop device mounted ext3 image
 
  if test $# -lt 1 ; then
-    echo "Usage: $0 [XX] where XX is a 2 to 4 character string"
+    echo "Usage: $0 [XXXXX] where XXXXX is a number from 00000 - 10000"
     echo "      corresponding to the fake_BIDS directory name"
      exit 2
    fi
@@ -29,7 +29,7 @@ TASK_ROOT=/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
 OUT_IMAGE=${TASK_ROOT}/ext3_images/TF-raw-${FB}.img
 
 # Ouput directory, this is the mounted ext3 image inside the container:
-# The ${FB} directories need to be created before the run, (I think)
+# The /TF_OUT/${FB} directories need to be created before the run, (I think)
 
 OUT_ROOT=/TF_OUT/${FB}
 
@@ -92,7 +92,6 @@ SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -v exec -
   -profile        fully_reproducible      \
   -resume                                 \
   -with-report    report.html             \
-  -with-timeline  timeline.html           \
   --processes     4                       \
   --processes_brain_extraction_t1 1       \
   --processes_denoise_dwi         2       \
