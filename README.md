@@ -88,9 +88,10 @@ rsync is run to move the files out of the work directory from each subject and i
             ....
 ```
 ### Initial Sanity Check
-A very simple check was run on a set of 4 subjects.  I ran the same 4 subjects twice and then rsynced the files from theor work directories into the beluga filesystem.  In the root of each set of output files I ran this simple find:
+A very simple check was run on a set of 4 subjects.  I ran the same 4 subjects twice and then rsynced the files from their work directories into the beluga filesystem.  In the root of each set of output files I ran this simple find:
 
 `find -type f -printf %h"/"%f\\t%s\\n | sort > zaaa_f_sizes.tsv`
+
 `find -type f -printf %h"/"%f\\t%s\\n | sort > zaaa-test_f_sizes.tsv`
 Producing output similar to this:
 ```
