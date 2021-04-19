@@ -111,7 +111,21 @@ Guillaume confirmed the irreproducibility problem and found an error in the way 
 
 Guillaume ran four subjects twice and confirmed that there the runs were identical. Adam ran a similar test with an updated container supplied by Arnaud and there were no differences in file size between the two runs. 
 ## Running Environment Setup
-*Simple bash loop is used to submit sbatch tf_run_ext3.sh jobs 
+*Simple bash loop is used to submit sbatch tf_run_ext3.sh jobs *
+
+NOTES: 
+```Singularity> cd /ext3_images/
+
+Singularity> /usr/sbin/mke2fs -t ext3 -d top -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
+e2fsck -yf neurohub_ukbb_tractoflow_00_derivatives.ext3
+
+export SINGULARITY_BIND=home_atrefo.img:/home/atrefo:image-src=/upper/atrefo,\
+neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub:image-src=/upper,\
+`for M in {00000..00119}; do echo "TF-raw-${M}.img:/TF_OUT/${M}:image-src=/upper/${M},ro" | tr '\n' ',' ; done`
+
+rsync -vaL /TF_OUT/*/sub-* /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3.log
+```
+
 ### Logs
 *Stuff about logging here, ie.: some logs are going into the ext3 image, some are being written to the filesystem, there is method to the madness, document it*
 
