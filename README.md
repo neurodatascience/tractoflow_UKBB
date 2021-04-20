@@ -125,6 +125,12 @@ neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub:image-src=/upper,\
 
 rsync -vaL /TF_OUT/*/sub-* /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3.log
 ```
+Parallel-ish:
+```
+rsync -aL /TF_OUT/{00120..00159}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01a_derivatives.log &
+rsync -aL /TF_OUT/{00160..00199}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01b_derivatives.log &
+rsync -aL /TF_OUT/{00200..00239}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01c_derivatives.log &
+```
 
 ### Logs
 *Stuff about logging here, ie.: some logs are going into the ext3 image, some are being written to the filesystem, there is method to the madness, document it*
