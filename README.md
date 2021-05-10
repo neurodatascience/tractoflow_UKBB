@@ -54,7 +54,7 @@ Beluga enforces a strict 7 day limit on process run time.  While Tractoflow has 
 #### ext3 writable file system images
 For each run of 4 subjects I create a 20GB ext3 filesystem image to be used to capture the output from the run. 
 
-From inside an ubuntu singularity image this command is run to create 240 initial ext3 images:
+From inside an ubuntu singularity image this command is run to create 240 initial 20GB ext3 images:
 
 `for i in {00000..00239}; do echo "mkfs.ext3 -d top -F -m 0 -b 4096 -N 100000 ./TF-raw-$i.img 20g"; done`
 
@@ -119,6 +119,7 @@ NOTES:
 Singularity> /usr/sbin/mke2fs -t ext3 -d top -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
 e2fsck -yf neurohub_ukbb_tractoflow_00_derivatives.ext3
 
+
 export SINGULARITY_BIND=home_atrefo.img:/home/atrefo:image-src=/upper/atrefo,\
 neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub:image-src=/upper,\
 `for M in {00000..00119}; do echo "TF-raw-${M}.img:/TF_OUT/${M}:image-src=/upper/${M},ro" | tr '\n' ',' ; done`
@@ -130,6 +131,22 @@ Parallel-ish:
 rsync -aL /TF_OUT/{00120..00159}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01a_derivatives.log &
 rsync -aL /TF_OUT/{00160..00199}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01b_derivatives.log &
 rsync -aL /TF_OUT/{00200..00239}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01c_derivatives.log &
+```
+### Sanity Checks
+`sanity_check_example.sh` is an example of running the first level of a simple sanity check using the script written by Etienne Saint-Onge called `scil_compute_avg_in_maps.py` on the TF output.  It generates a comma delimited set of results from an analysis of the derived images  *Etienne needs to fill out some details here*
+
+This sets `SINGULARITY_BIND` to mount the 2TB ext3 image and a directory on the host that is used for the sanity check output: 
+```
+SINGULARITY_BIND=ext3_images/home_atrefo.img:/home/atrefo:image-src=/upper/atrefo,\
+ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub_00:image-src=/upper,ro\
+/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/sanity_out:/OUT_DIR:rw
+
+Singularity> PATH=$PATH:/home/atrefo/bin/tractoflow_UKBB
+Singularity> sanity_check_example.sh SID00.list
+```
+This oneliner cats the output from all the sanity checks into a single file, inserting a linefeed between subjects:
+```
+Singularity> while read SID ; do cat /OUT_DIR/${SID}__avg.txt >> SID_all00.lf; echo  >> SID_all00.lf ;done < SID00.list
 ```
 
 ### Logs
