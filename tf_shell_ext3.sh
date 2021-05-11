@@ -10,8 +10,9 @@
 #SBATCH --mem-per-cpu=2G
 #SBATCH --time=1-12:00:00
 
-# --time is set with the assumption that these runs should take 21 hours
-# with some slop
+# --time is set with the assumption that these runs should take 
+# no more than 21 hours with some slop.
+
 # This version of the script writes to a loopback mounted ext3 image
 
  if test $# -lt 1 ; then
@@ -29,7 +30,6 @@ TASK_ROOT=/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
 OUT_IMAGE=${TASK_ROOT}/ext3_images/TF-raw-${FB}.img
 
 # Ouput directory, this is the mounted ext3 image inside the container:
-# The ${FB} directories need to be created before the run, (I think)
 
 OUT_ROOT=/TF_OUT/${FB}
 
@@ -67,12 +67,11 @@ UKBB_SQUASHFS="
   neurohub_ukbb_t1_ses2_0_jsonpatch.squashfs
 "
 # Prepared DWI simlink dir with the generated B0 files
-# DWI_SQUASHFS_DIR=/lustre04/scratch/atrefo/sherbrooke/squash_tractoflow
 DWI_SQUASHFS_DIR=${TASK_ROOT}/squash_tractoflow
 DWI_SQUASHFS="
   dwipipeline.squashfs
 "
-#SING_BINDS=" -H ${OUT_ROOT} -B $DWI_SQUASHFS_DIR -B $TASK_ROOT -B ${OUT_IMAGE}:/TF_OUT:image-src=/upper "
+
 SING_BINDS=" -H ${OUT_ROOT} -B $DWI_SQUASHFS_DIR -B $TASK_ROOT -B ${OUT_IMAGE}:${OUT_ROOT}:image-src=/ "
 UKBB_OVERLAYS=$(echo "" $UKBB_SQUASHFS | sed -e "s# # --overlay $UKBB_SQUASHFS_DIR/#g")
 DWI_OVERLAYS=$(echo "" $DWI_SQUASHFS | sed -e "s# # --overlay $DWI_SQUASHFS_DIR/#g")
