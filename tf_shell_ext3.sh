@@ -73,7 +73,7 @@ DWI_SQUASHFS="
   dwipipeline.squashfs
 "
 #SING_BINDS=" -H ${OUT_ROOT} -B $DWI_SQUASHFS_DIR -B $TASK_ROOT -B ${OUT_IMAGE}:/TF_OUT:image-src=/upper "
-SING_BINDS=" -H ${OUT_ROOT} -B $DWI_SQUASHFS_DIR -B $TASK_ROOT -B ${OUT_IMAGE}:/TF_OUT "
+SING_BINDS=" -H ${OUT_ROOT} -B $DWI_SQUASHFS_DIR -B $TASK_ROOT -B ${OUT_IMAGE}:/TF_OUT:image-src=/ "
 UKBB_OVERLAYS=$(echo "" $UKBB_SQUASHFS | sed -e "s# # --overlay $UKBB_SQUASHFS_DIR/#g")
 DWI_OVERLAYS=$(echo "" $DWI_SQUASHFS | sed -e "s# # --overlay $DWI_SQUASHFS_DIR/#g")
 
