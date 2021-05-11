@@ -11,8 +11,9 @@
 #SBATCH --time=1-12:00:00
 #SBATCH --output=slurm_out/%x-%j.out
 
-# --time is set to 36 hours, (1-12:00:00) with the assumption that these runs should take 21 hours
-# with some slop
+# --time is set with the assumption that these runs should take 
+# no more than 21 hours with some slop.
+
 # This version of the script writes to a loop device mounted ext3 image
 
  if test $# -lt 1 ; then
@@ -30,7 +31,6 @@ TASK_ROOT=/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
 OUT_IMAGE=${TASK_ROOT}/ext3_images/TF-raw-${FB}.img
 
 # Ouput directory, this is the mounted ext3 image inside the container:
-# The /TF_OUT/${FB} directories need to be created before the run, (I think)
 
 OUT_ROOT=/TF_OUT/${FB}
 
@@ -72,7 +72,8 @@ DWI_SQUASHFS_DIR=${TASK_ROOT}/squash_tractoflow
 DWI_SQUASHFS="
   dwipipeline.squashfs
 "
-SING_BINDS=" -H ${OUT_ROOT} -B $DWI_SQUASHFS_DIR -B $TASK_ROOT -B ${OUT_IMAGE}:/TF_OUT:image-src=/upper "
+
+SING_BINDS=" -H ${OUT_ROOT} -B $DWI_SQUASHFS_DIR -B $TASK_ROOT -B ${OUT_IMAGE}:${OUT_ROOT}:image-src=/ "
 UKBB_OVERLAYS=$(echo "" $UKBB_SQUASHFS | sed -e "s# # --overlay $UKBB_SQUASHFS_DIR/#g")
 DWI_OVERLAYS=$(echo "" $DWI_SQUASHFS | sed -e "s# # --overlay $DWI_SQUASHFS_DIR/#g")
 
@@ -102,4 +103,3 @@ SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -v exec -
   --processes_registration        1       \
 
 # previous blank line intentional
-
