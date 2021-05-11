@@ -134,7 +134,7 @@ rsync -aL /TF_OUT/{00160..00199}/sub-*  /neurohub/ukbb/imaging/derivatives/tract
 rsync -aL /TF_OUT/{00200..00239}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01c_derivatives.log &
 ```
 ### Sanity Checks
-`sanity_check_example.sh` is an example of running the first level of a simple sanity check using the script written by Etienne Saint-Onge called `scil_compute_avg_in_maps.py` on the TF output.  It generates a comma delimited set of results from an analysis of the derived images  *Etienne needs to fill out some details here*
+`sanity_check_example.sh` is an example of running the first level of a simple sanity check using the script written by Etienne St-Onge called `scil_compute_avg_in_maps.py` on the TF output.  It generates a comma delimited set of results from an analysis of the derived images  *Etienne needs to fill out some details here*
 
 This sets `SINGULARITY_BIND` to mount the 2TB ext3 image and a directory on the host that is used for the sanity check output: 
 ```
