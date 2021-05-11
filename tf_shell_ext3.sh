@@ -13,10 +13,10 @@
 # --time is set with the assumption that these runs should take 
 # no more than 21 hours with some slop.
 
-# This version of the script writes to a loopback mounted ext3 image
+# This version of the script writes to a loop device mounted ext3 image
 
  if test $# -lt 1 ; then
-    echo "Usage: $0 [XX] where XX is a 2 to 4 character string"
+    echo "Usage: $0 [XXXXX] where XXXXX is a number from 00000 - 10000"
     echo "      corresponding to the fake_BIDS directory name"
      exit 2
    fi
