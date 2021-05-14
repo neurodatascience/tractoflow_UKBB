@@ -150,7 +150,7 @@ This sets `SINGULARITY_BIND` to mount the 2TB ext3 image and a directory on the 
 ```
 $ cd /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
 
-$ export SINGULARITY_BIND=ext3_images/home_atrefo.img:/home/atrefo:image-src=/upper/atrefo,\
+$ export SINGULARITY_BIND= \
 ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub_00:image-src=/upper,ro\
 /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/sanity_out:/OUT_DIR:rw
 
