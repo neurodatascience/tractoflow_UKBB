@@ -143,15 +143,21 @@ rsync -aL /TF_OUT/{00120..00159}/sub-*  /neurohub/ukbb/imaging/derivatives/tract
 rsync -aL /TF_OUT/{00160..00199}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01b_derivatives.log &
 rsync -aL /TF_OUT/{00200..00239}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01c_derivatives.log &
 ```
-### Sanity Checks
+### Programatic Sanity Checks
 `sanity_check_example.sh` is an example of running the first level of a simple sanity check using the script written by Etienne St-Onge called `scil_compute_avg_in_maps.py` on the TF output.  It generates a comma delimited set of results from an analysis of the derived images  *I need Etienne to fill out some details here*
 
 This sets `SINGULARITY_BIND` to mount the 2TB ext3 image and a directory on the host that is used for the sanity check output: 
 ```
-export SINGULARITY_BIND=ext3_images/home_atrefo.img:/home/atrefo:image-src=/upper/atrefo,\
+$ cd /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
+
+$ export SINGULARITY_BIND=ext3_images/home_atrefo.img:/home/atrefo:image-src=/upper/atrefo,\
 ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub_00:image-src=/upper,ro\
 /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/sanity_out:/OUT_DIR:rw
 
+$ singularity -v shell --cleanenv tractoflow.sif
+```
+To run the `sanity_check_example.sh` You may need to get this directory in your path:
+```
 Singularity> PATH=$PATH:/home/atrefo/bin/tractoflow_UKBB
 Singularity> sanity_check_example.sh SID00.list
 ```
