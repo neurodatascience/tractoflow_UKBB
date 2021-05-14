@@ -112,33 +112,43 @@ Guillaume confirmed the irreproducibility problem and found an error in the way 
 
 Guillaume ran four subjects twice and confirmed that there the runs were identical. Adam ran a similar test with an updated container supplied by Arnaud and there were no differences in file size between the two runs. 
 ## Running Environment Setup
-*Simple bash loop is used to submit sbatch tf_run_ext3.sh jobs *
-
+Simple bash loop is used to submit sbatch tf_run_ext3.sh jobs:
+```
+for i in {00002..00239} ; do sbatch --job-name=TFUKBB-$i bin/tf_run_ext3.sh $i ; done
+```
 NOTES: 
-```Singularity> cd /ext3_images/
 
-Singularity> /usr/sbin/mke2fs -t ext3 -d top -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
+To create a 2.2TB ext3 image file:
+```
+/usr/sbin/mke2fs -t ext3 -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
+```
+Check the image, fixing any problems:
+```
 e2fsck -yf neurohub_ukbb_tractoflow_00_derivatives.ext3
+```
 
-
+In order to rsync the individual runs into the 2.2TB image set the `SINGULARITY_BIND` variable like this, changing the $M setting to the range of the runs being worked on:
+```
 export SINGULARITY_BIND=home_atrefo.img:/home/atrefo:image-src=/upper/atrefo,\
 neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub:image-src=/upper,\
 `for M in {00000..00119}; do echo "TF-raw-${M}.img:/TF_OUT/${M}:image-src=/upper/${M},ro" | tr '\n' ',' ; done`
-
+```
+This is how to rsync the data:
+```
 rsync -vaL /TF_OUT/*/sub-* /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3.log
 ```
-Parallel-ish:
+It can be sped up by making it parallel-ish:
 ```
 rsync -aL /TF_OUT/{00120..00159}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01a_derivatives.log &
 rsync -aL /TF_OUT/{00160..00199}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01b_derivatives.log &
 rsync -aL /TF_OUT/{00200..00239}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01c_derivatives.log &
 ```
 ### Sanity Checks
-`sanity_check_example.sh` is an example of running the first level of a simple sanity check using the script written by Etienne St-Onge called `scil_compute_avg_in_maps.py` on the TF output.  It generates a comma delimited set of results from an analysis of the derived images  *Etienne needs to fill out some details here*
+`sanity_check_example.sh` is an example of running the first level of a simple sanity check using the script written by Etienne St-Onge called `scil_compute_avg_in_maps.py` on the TF output.  It generates a comma delimited set of results from an analysis of the derived images  *I need Etienne to fill out some details here*
 
 This sets `SINGULARITY_BIND` to mount the 2TB ext3 image and a directory on the host that is used for the sanity check output: 
 ```
-SINGULARITY_BIND=ext3_images/home_atrefo.img:/home/atrefo:image-src=/upper/atrefo,\
+export SINGULARITY_BIND=ext3_images/home_atrefo.img:/home/atrefo:image-src=/upper/atrefo,\
 ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub_00:image-src=/upper,ro\
 /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/sanity_out:/OUT_DIR:rw
 
