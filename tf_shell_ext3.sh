@@ -8,7 +8,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=2G
-#SBATCH --time=1-12:00:00
+#SBATCH --time=0-20:00:00
 #SBATCH --output=slurm_out/%x-%j.out
 
 # --time is set with the assumption that these runs should take 
