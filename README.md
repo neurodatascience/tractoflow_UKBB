@@ -57,8 +57,9 @@ For each run of 4 subjects I create a 20GB ext3 filesystem image to be used to c
 
 From using a version of `mkfs.ext3` that supports the `-d directory` option this command is run to create 240 initial 20GB ext3 images:
 
-`for i in {00000..00239}; do mkfs.ext3 -E root_owner=3096613:6008063 -F -m 0 -b 4096 -N 100000 ./TF-raw-$i.img 20g; done`
+`for i in {00000..00239}; do mkfs.ext3 -E -d top -F -m 0 -b 4096 -N 100000 ./TF-raw-$i.img 20g; done`
 
+It may be important to set the ownerships on the `top` directory, and the top directory likely should be created on a sytem where you have root.
 
 Approximately 80 2TB ext3 images will eventually be created, one for every 480 subjects (120 runs).  When 120 runs have been completed the 120 ext3 images get mounted into a singularity container along with an empty 2TB ext3 image.  The derivative files will be rsynced from the 20GB images into the 2TB image.  This will then be saved as a squashfs image as described below: NOTE: *Describe it*
 
@@ -120,7 +121,7 @@ NOTES:
 
 To create a 2.2TB ext3 image file:
 ```
-/usr/sbin/mke2fs -t ext3 -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
+/usr/sbin/mke2fs -t ext3 -d top -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
 ```
 Check the image, fixing any problems:
 ```
