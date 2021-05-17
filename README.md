@@ -55,7 +55,7 @@ beluga enforces a strict 7 day limit on process run time.  This will kill any pr
 #### ext3 writable file system images
 For each run of 4 subjects I create a 20GB ext3 filesystem image to be used to capture the output from the run. 
 
-From using a version of `e2mkfs` that supportd the `-d directory` option this command is run to create 240 initial 20GB ext3 images:
+From using a version of `mkfs.ext3` that supports the `-d directory` option this command is run to create 240 initial 20GB ext3 images:
 
 `for i in {00000..00239}; do mkfs.ext3 -E root_owner=3096613:6008063 -F -m 0 -b 4096 -N 100000 ./TF-raw-$i.img 20g; done`
 
