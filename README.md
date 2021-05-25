@@ -55,10 +55,11 @@ beluga enforces a strict 7 day limit on process run time.  This will kill any pr
 #### ext3 writable file system images
 For each run of 4 subjects I create a 20GB ext3 filesystem image to be used to capture the output from the run. 
 
-From inside an ubuntu singularity image this command is run to create 240 initial 20GB ext3 images:
+From using a version of `mkfs.ext3` that supports the `-d directory` option this command is run to create 240 initial 20GB ext3 images:
 
-`for i in {00000..00239}; do echo "mkfs.ext3 -d top -F -m 0 -b 4096 -N 100000 ./TF-raw-$i.img 20g"; done`
+`for i in {00000..00239}; do mkfs.ext3 -E -d top -F -m 0 -b 4096 -N 100000 ./TF-raw-$i.img 20g; done`
 
+It may be important to set the ownerships on the `top` directory, and the top directory likely should be created on a sytem where you have root.
 
 Approximately 80 2TB ext3 images will eventually be created, one for every 480 subjects (120 runs).  When 120 runs have been completed the 120 ext3 images get mounted into a singularity container along with an empty 2TB ext3 image.  The derivative files will be rsynced from the 20GB images into the 2TB image.  This will then be saved as a squashfs image as described below: NOTE: *Describe it*
 
@@ -112,42 +113,88 @@ Guillaume confirmed the irreproducibility problem and found an error in the way 
 
 Guillaume ran four subjects twice and confirmed that there the runs were identical. Adam ran a similar test with an updated container supplied by Arnaud and there were no differences in file size between the two runs. 
 ## Running Environment Setup
-*Simple bash loop is used to submit sbatch tf_run_ext3.sh jobs *
-
+Simple bash loop is used to submit sbatch tf_run_ext3.sh jobs:
+```
+for i in {00002..00239} ; do sbatch --job-name=TFUKBB-$i bin/tf_run_ext3.sh $i ; done
+```
 NOTES: 
-```Singularity> cd /ext3_images/
 
-Singularity> /usr/sbin/mke2fs -t ext3 -d top -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
+To create a 2.2TB ext3 image file:
+```
+/usr/sbin/mke2fs -t ext3 -d top -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
+```
+Check the image, fixing any problems:
+```
 e2fsck -yf neurohub_ukbb_tractoflow_00_derivatives.ext3
+```
 
-
+In order to rsync the individual runs into the 2.2TB image set the `SINGULARITY_BIND` variable like this, changing the $M setting to the range of the runs being worked on:
+```
 export SINGULARITY_BIND=home_atrefo.img:/home/atrefo:image-src=/upper/atrefo,\
 neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub:image-src=/upper,\
 `for M in {00000..00119}; do echo "TF-raw-${M}.img:/TF_OUT/${M}:image-src=/upper/${M},ro" | tr '\n' ',' ; done`
-
+```
+This is how to rsync the data:
+```
 rsync -vaL /TF_OUT/*/sub-* /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3.log
 ```
-Parallel-ish:
+It can be sped up by making it parallel-ish:
 ```
 rsync -aL /TF_OUT/{00120..00159}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01a_derivatives.log &
 rsync -aL /TF_OUT/{00160..00199}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01b_derivatives.log &
 rsync -aL /TF_OUT/{00200..00239}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01c_derivatives.log &
 ```
-### Sanity Checks
-`sanity_check_example.sh` is an example of running the first level of a simple sanity check using the script written by Etienne St-Onge called `scil_compute_avg_in_maps.py` on the TF output.  It generates a comma delimited set of results from an analysis of the derived images  *Etienne needs to fill out some details here*
+### Programatic Sanity Checks
+`sanity_check_example.sh` is an example of running the first level of a simple sanity check using the script written by Etienne St-Onge called `scil_compute_avg_in_maps.py` on the TF output.  It generates a comma delimited set of results from an analysis of the derived images  *I need Etienne to fill out some details here*
 
 This sets `SINGULARITY_BIND` to mount the 2TB ext3 image and a directory on the host that is used for the sanity check output: 
 ```
-SINGULARITY_BIND=ext3_images/home_atrefo.img:/home/atrefo:image-src=/upper/atrefo,\
-ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub_00:image-src=/upper,ro\
-/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/sanity_out:/OUT_DIR:rw
+$ cd /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
 
+$ export SINGULARITY_BIND=ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub_00:image-src=/upper,ro,/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/sanity_out:/OUT_DIR:rw
+
+$ singularity -v shell --cleanenv tractoflow.sif
+```
+To run the `sanity_check_example.sh` You may need to get this directory in your path:
+```
 Singularity> PATH=$PATH:/home/atrefo/bin/tractoflow_UKBB
 Singularity> sanity_check_example.sh SID00.list
 ```
 This oneliner cats the output from all the sanity checks into a single file, inserting a linefeed between subjects:
 ```
 Singularity> while read SID ; do cat /OUT_DIR/${SID}__avg.txt >> SID_all00.lf; echo  >> SID_all00.lf ;done < SID00.list
+```
+
+### From Etienne:
+I managed to get some time and created a script to compute outliers :
+https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_outliers_from_avg.py
+
+For simplicity, the input is the list of .txt files.
+It was the safest/easiest way to manage empty lines (missing subjects).
+It sadly requires to be launched after the previous "scil_compute_avg_in_maps.py",
+but it's very fast, so it can be computed on an interactive node (single core).
+(The output/print is a list of outliers)
+
+
+```
+python scil_compute_outliers_from_avg.py Sanity_Out/*.txt  \
+    --masks_name   map_wm  map_csf  map_gm \
+    --metrics_name  ad  fa  md  afd_total  volume
+```
+The "--masks_name " and "--metrics_name" needs to be in the same order (from the previous script)
+(+ the "volume", if it was used with "--masks_sum"
+```
+scil_compute_avg_in_maps.py \
+  ${SID}/Segment_Tissues/${SID}__map_wm.nii.gz \
+  ${SID}/Segment_Tissues/${SID}__map_csf.nii.gz \
+  ${SID}/Segment_Tissues/${SID}__map_gm.nii.gz \
+  --metrics \
+    ${SID}/DTI_Metrics/${SID}__ad.nii.gz \
+    ${SID}/DTI_Metrics/${SID}__fa.nii.gz \
+    ${SID}/DTI_Metrics/${SID}__md.nii.gz \
+    ${SID}/FODF_Metrics/${SID}__afd_total.nii.gz \
+  --indent 4 --masks_sum \
+  --save_avg ${SID}__avg.txt
 ```
 
 ### Logs

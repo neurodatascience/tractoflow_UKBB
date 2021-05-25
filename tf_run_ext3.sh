@@ -8,7 +8,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=2G
-#SBATCH --time=1-12:00:00
+#SBATCH --time=0-20:00:00
 #SBATCH --output=slurm_out/%x-%j.out
 
 # --time is set with the assumption that these runs should take 
@@ -73,7 +73,7 @@ DWI_SQUASHFS="
   dwipipeline.squashfs
 "
 
-SING_BINDS=" -H ${OUT_ROOT} -B $DWI_SQUASHFS_DIR -B $TASK_ROOT -B ${OUT_IMAGE}:${OUT_ROOT}:image-src=/ "
+SING_BINDS=" -H ${OUT_ROOT} -B $DWI_SQUASHFS_DIR -B $TASK_ROOT -B ${OUT_IMAGE}:${OUT_ROOT}:image-src=/upper "
 UKBB_OVERLAYS=$(echo "" $UKBB_SQUASHFS | sed -e "s# # --overlay $UKBB_SQUASHFS_DIR/#g")
 DWI_OVERLAYS=$(echo "" $DWI_SQUASHFS | sed -e "s# # --overlay $DWI_SQUASHFS_DIR/#g")
 
