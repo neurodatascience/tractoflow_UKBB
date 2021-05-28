@@ -28,7 +28,7 @@ export FB=$1
 TASK_ROOT=/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
 
 # Writable 20G ext3 image file for output
-OUT_IMAGE=${TASK_ROOT}/ext3_images/TF-raw-${FB}.img
+OUT_IMAGE=${TASK_ROOT}/ext3_images/TF_raw/TF-raw-${FB}.img
 
 # Ouput directory, this is the mounted ext3 image inside the container:
 
