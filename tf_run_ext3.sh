@@ -24,6 +24,9 @@
 
 export FB=$1
 
+# In case I forgot to clear $SINGULARITY_BIND
+export SINGULARITY_BIND=""
+
 # Work directory 
 TASK_ROOT=/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
 
