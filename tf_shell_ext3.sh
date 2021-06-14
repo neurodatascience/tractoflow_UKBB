@@ -14,7 +14,8 @@
 # --time is set with the assumption that these runs should take 
 # no more than 21 hours with some slop.
 
-# This version of the script writes to a loop device mounted ext3 image
+# This version of the script mounts a loop device mounted ext3 image
+# and initiates a sing shell, and does /not/ run tractoflow
 
  if test $# -lt 1 ; then
     echo "Usage: $0 [XXXXX] where XXXXX is a number from 00000 - 10000"
