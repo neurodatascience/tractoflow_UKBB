@@ -15,9 +15,9 @@ set -e -u
 ### 1. include this script into a singularity image that also includes
 ### scil_extract_b0.py
 ### 2. Add routine
-## ARGH!  really bad variable.  Need to turn this into an argument.
+## ARGH!  really bad variable.  Need to turn these into CL arguments.
 
-# workDIR="/scratch/atrefo/sherbrooke/symtree"
+workDIR="/symtree"
 bidsIN="/neurohub/ukbb/imaging"
 bidsOUT="${workDIR}/neurohub/ukbb/imaging"
 
