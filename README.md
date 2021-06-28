@@ -57,7 +57,7 @@ For each run of 4 subjects I create a 20GB ext3 filesystem image to be used to c
 
 From using a version of `mkfs.ext3` that supports the `-d directory` option this command is run to create 240 initial 20GB ext3 images:
 
-`for i in {00000..00239}; do mkfs.ext3 -E -d top -F -m 0 -b 4096 -N 100000 ./TF-raw-$i.img 20g; done`
+`for i in {00000..00239}; do mkfs.ext3 -d top -F -m 0 -b 4096 -N 100000 ./TF-raw-$i.img 20g; done`
 
 It may be important to set the ownerships on the `top` directory, and the top directory likely should be created on a sytem where you have root.
 
