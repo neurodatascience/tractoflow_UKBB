@@ -23,7 +23,7 @@ Choose which direction (AP or PA) will be the "main" direction.
 2. Remove the "old", `PA` direction files from `/dwi`
 3. Create a json file for this new file with the `IntendedFor` key pointing to the subject's `/dwi`
 
-Squashfs files are, by design read-only, and of course we don't want to mess with the UKBB raw files, so to make this work I created the symlink tree `/scratch/atrefo/sherbrooke/symtree`, illustrated below, and performed those operations into that tree using the `tf_ukbb_bids_prep.sh` script.
+Squashfs files are by design read-only, so to make this work I created the symlink tree `/scratch/atrefo/sherbrooke/symtree`, illustrated below, and performed those operations into that tree using the `tf_ukbb_bids_prep.sh` script.
 
 ``` 
 /neurohub/ukbb/imaging/sub-*/ses-2/
@@ -43,16 +43,16 @@ Squashfs files are, by design read-only, and of course we don't want to mess wit
 ```
 I deleted the symlinks that pointed to the PA direction files and saved that as a squashfs image.  By overlaying that squashfs onto the contianer along with the UKBB squashfs images I can point at the file tree in it 
 
-#### Missing PA_dwi.json files
+#### Missing PA_dwi.json files [Needs update]
 There are about 8,000 subjects in the UKBB dataset without `*PA_dwi.json` files.  In our initial runs we simply ignored these subjects by removing the symlinks that point to their BIDS directory.  When the dwi dataset has been cleaned up by Lex the `tf_ukbb_bids_prep.sh` script will need to be re-run.  A check for already existing files could (should?) be run so we're not duplicating effort.  Note: it is also possible (likely?) that `scil_extract_b0.py`will have different results each time it's run, this shouldn't be an issue as long as the derivitives and the b0 extractions are from matched runs.
 
 ### inode Limits
-beluga uses the Lustre distributed file system. File system performance suffers significantly with lots of files and so inode quotas are strictly enforced.  Tractoflow generartes 109 files for each subject.  A complete run of all 40,000 subjects would have an adverse effect on the performance of the file system, as well as running us over quota eventually.
+beluga uses the Lustre distributed file system. File system performance suffers significantly with lots of files and so inode quotas are strictly enforced.  Tractoflow generartes 109 files for each subject.  A complete run of all 45,000 subjects would have an adverse effect on the performance of the file system, as well as running us over quota eventually.
 
 ### Process Run Time
-beluga enforces a strict 7 day limit on process run time.  This will kill any process that runs for more than 7 days. Tractoflow has implemented a "resume" routine and we could resubmit the process when it gets killed.  This is not only inelegant additionally the method leaves orphaned files when it is resumed after being killed.  In my testing the file count and bit count exploded drastically with only a few killed runs.  There is no on the fly garbage cleanup built in and so a routine would need to be implemented to take care of the cruft.  There is no slurm style checkpointing and so running it with slurm arrays is not useful.
+beluga enforces a strict 7 day limit on process run time.  This will kill any process that runs for more than 7 days. Tractoflow has implemented a "resume" routine and we could resubmit the process when it gets killed.  This is not only inelegant but additionally the method leaves orphaned files when it is resumed after being killed.  In my testing the file count and bit count exploded drastically with only a few killed runs.  There is no on-the-fly garbage cleanup built in and so a routine would need to be implemented to take care of the cruft.  There is no slurm style checkpointing and so running it with slurm arrays is not useful.
 
-#### ext3 writable file system images
+#### Mitigation:  ext3 writable file system images
 For each run of 4 subjects I create a 20GB ext3 filesystem image to be used to capture the output from the run. 
 
 From using a version of `mkfs.ext3` that supports the `-d directory` option this command is run to create 240 initial 20GB ext3 images:
@@ -197,7 +197,7 @@ scil_compute_avg_in_maps.py \
   --save_avg ${SID}__avg.txt
 ```
 
-### Logs
+### Logs [Needs update]
 *Stuff about logging here, ie.: some logs are going into the ext3 image, some are being written to the filesystem, there is method to the madness, document it*
 
 Nextflow logs
