@@ -53,11 +53,6 @@ UKBB_SQUASHFS="
   neurohub_ukbb_dwi_ses2_0_bids.squashfs
   neurohub_ukbb_dwi_ses2_1_bids.squashfs
   neurohub_ukbb_dwi_ses2_2_bids.squashfs
-  neurohub_ukbb_dwi_ses2_3_bids.squashfs
-  neurohub_ukbb_dwi_ses2_4_bids.squashfs
-  neurohub_ukbb_dwi_ses2_5_bids.squashfs
-  neurohub_ukbb_dwi_ses2_6_bids.squashfs
-  neurohub_ukbb_dwi_ses2_7_bids.squashfs
   neurohub_ukbb_flair_ses2_0_bids.squashfs
   neurohub_ukbb_rfmri_ses2_0_bids.squashfs
   neurohub_ukbb_rfmri_ses2_1_bids.squashfs

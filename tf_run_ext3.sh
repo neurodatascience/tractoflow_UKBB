@@ -12,9 +12,10 @@
 #SBATCH --output=slurm_out/%x-%j.out
 
 # --time is set with the assumption that these runs should take 
-# no more than 21 hours with some slop.
+# no more than 17 hours with some slop.
 
-# This version of the script writes to a loop device mounted ext3 image
+# This version of the script writes to a loop mounted ext3 image
+set -eu
 
  if test $# -lt 1 ; then
     echo "Usage: $0 [XXXXX] where XXXXX is a number from 00000 - 10000"
@@ -33,9 +34,11 @@ TASK_ROOT=/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
 # Writable 20G ext3 image file for output
 OUT_IMAGE=${TASK_ROOT}/ext3_images/TF_raw/TF-raw-${FB}.img
 
-# Ouput directory, this is the mounted ext3 image inside the container:
-
+# Ouput directory, this is the loop mounted ext3 image inside the container:
 OUT_ROOT=/TF_OUT/${FB}
+
+# Prepared DWI symlink dir with the generated B0 files
+SYMTREE=${TASK_ROOT}/ext3_images/symtree.ext3
 
 # Current fake BIDS
 BIDS_DIR="$TASK_ROOT/fake_bids/dwi_subs-${FB}"
@@ -52,31 +55,15 @@ UKBB_SQUASHFS="
   neurohub_ukbb_dwi_ses2_0_bids.squashfs
   neurohub_ukbb_dwi_ses2_1_bids.squashfs
   neurohub_ukbb_dwi_ses2_2_bids.squashfs
-  neurohub_ukbb_dwi_ses2_3_bids.squashfs
-  neurohub_ukbb_dwi_ses2_4_bids.squashfs
-  neurohub_ukbb_dwi_ses2_5_bids.squashfs
-  neurohub_ukbb_dwi_ses2_6_bids.squashfs
   neurohub_ukbb_dwi_ses2_7_bids.squashfs
   neurohub_ukbb_flair_ses2_0_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_0_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_1_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_2_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_3_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_4_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_5_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_6_bids.squashfs
   neurohub_ukbb_t1_ses2_0_bids.squashfs
   neurohub_ukbb_t1_ses3_0_bids.squashfs
   neurohub_ukbb_participants.squashfs
   neurohub_ukbb_t1_ses2_0_jsonpatch.squashfs
 "
-# Prepared DWI simlink dir with the generated B0 files
-DWI_SQUASHFS_DIR=${TASK_ROOT}/squash_tractoflow
-DWI_SQUASHFS="
-  dwipipeline.squashfs
-"
 
-SING_BINDS=" -H ${OUT_ROOT} -B $DWI_SQUASHFS_DIR -B $TASK_ROOT -B ${OUT_IMAGE}:${OUT_ROOT}:image-src=/upper "
+SING_BINDS=" -H ${OUT_ROOT} -B ${SYMTREE}:/ $TASK_ROOT -B ${OUT_IMAGE}:${OUT_ROOT}:image-src=/upper "
 UKBB_OVERLAYS=$(echo "" $UKBB_SQUASHFS | sed -e "s# # --overlay $UKBB_SQUASHFS_DIR/#g")
 DWI_OVERLAYS=$(echo "" $DWI_SQUASHFS | sed -e "s# # --overlay $DWI_SQUASHFS_DIR/#g")
 
