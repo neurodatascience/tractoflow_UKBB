@@ -43,6 +43,12 @@ SYMTREE=${TASK_ROOT}/ext3_images/symtree.ext3
 # Current fake BIDS
 BIDS_DIR="$TASK_ROOT/fake_bids/dwi_subs-${FB}"
 
+# Nextflow trace logs directory
+TRACE_DIR="$TASK_ROOT/sanity_out/nf_traces/"
+
+# Nextflow trace log file
+TRACE_FILE="$TRACE_DIR/trace-${FB}.txt"
+
 # Check that the working dirs are there
 cd $TASK_ROOT || exit
 cd $BIDS_DIR || exit
@@ -71,7 +77,7 @@ DWI_OVERLAYS=$(echo "" $DWI_SQUASHFS | sed -e "s# # --overlay $DWI_SQUASHFS_DIR/
 module load singularity/3.7
 
 SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -v exec --cleanenv $SING_BINDS $UKBB_OVERLAYS $DWI_OVERLAYS $SING_TF_IMAGE \
-  nextflow run /tractoflow/main.nf        \
+  nextflow -q run /tractoflow/main.nf        \
   --bids          ${BIDS_DIR}             \
   --output_dir    ${OUT_ROOT}             \
   -w              ${OUT_ROOT}/work        \
@@ -83,6 +89,7 @@ SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -v exec -
   --save_seeds    false                   \
   -profile        fully_reproducible      \
   -resume                                 \
+  -with-trace     ${TRACE_FILE}           \
   -with-report    report.html             \
   --processes     4                       \
   --processes_brain_extraction_t1 1       \
