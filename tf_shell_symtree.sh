@@ -24,6 +24,8 @@ export SINGULARITY_BIND=""
 TASK_ROOT=/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
 SYMTREE=${TASK_ROOT}/ext3_images/symtree.ext3
 FAKEBIDS=${TASK_ROOT}/ext3_images/fakebids.squashfs
+# use the following to create the fakebids image using mk_fakebids.sh
+#FAKEBIDS=${TASK_ROOT}/ext3_images/fakebids.ext3
 
 # Check that the working dir is there
 cd $TASK_ROOT || exit
