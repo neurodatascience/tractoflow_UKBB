@@ -30,7 +30,8 @@ FAKEBIDS=${TASK_ROOT}/ext3_images/fakebids.squashfs
 # Check that the working dir is there
 cd $TASK_ROOT || exit
 
-SING_TF_IMAGE=$TASK_ROOT/tractoflow.sif
+SING_TF_IMAGE=$TASK_ROOT/bin/ubuntu.sif
+# SING_TF_IMAGE=$TASK_ROOT/tractoflow.sif
 
 # UKBB squashfs files
 UKBB_SQUASHFS_DIR=/project/6008063/neurohub/ukbb/imaging
@@ -43,7 +44,7 @@ UKBB_SQUASHFS="
   neurohub_ukbb_t1_ses2_0_jsonpatch.squashfs
 "
 
-SING_BINDS=" -B ${SYMTREE}:/dwipipeline:image-src=/upper/neurohub,ro -B ${TASK_ROOT}:/TF_RUN "
+SING_BINDS=" -B ${SYMTREE}:/dwipipeline:image-src=/upper/neurohub,rw -B ${TASK_ROOT}:/TF_RUN "
 
 #SING_BINDS=" -B ${FAKEBIDS}:/fakebids:image-src=/upper,ro  -B ${TASK_ROOT}/ext3_images/symtree.ext3:/symtree:image-src=/upper -B ${TASK_ROOT}:/TF_RUN "
 
