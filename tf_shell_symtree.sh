@@ -22,7 +22,8 @@ export SINGULARITY_BIND=""
 
 # Work directory 
 TASK_ROOT=/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
-SYMTREE=${TASK_ROOT}/ext3_images/symtree.ext3
+SYMTREE=${TASK_ROOT}/ext3_images/symtree.squashfs
+#SYMTREE=${TASK_ROOT}/ext3_images/symtree.ext3
 FAKEBIDS=${TASK_ROOT}/ext3_images/fakebids.squashfs
 # use the following to create the fakebids image using mk_fakebids.sh
 #FAKEBIDS=${TASK_ROOT}/ext3_images/fakebids.ext3
@@ -44,11 +45,13 @@ UKBB_SQUASHFS="
   neurohub_ukbb_t1_ses2_0_jsonpatch.squashfs
 "
 
-SING_BINDS=" -B ${SYMTREE}:/dwipipeline:image-src=/upper/neurohub,rw -B ${TASK_ROOT}:/TF_RUN "
+SING_BINDS=" -B ${TASK_ROOT}:/TF_RUN "
+
+#SING_BINDS=" -B ${SYMTREE}:/dwipipeline:image-src=/upper/neurohub,rw -B ${TASK_ROOT}:/TF_RUN "
 
 #SING_BINDS=" -B ${FAKEBIDS}:/fakebids:image-src=/upper,ro  -B ${TASK_ROOT}/ext3_images/symtree.ext3:/symtree:image-src=/upper -B ${TASK_ROOT}:/TF_RUN "
 
-UKBB_OVERLAYS=$(echo "" $UKBB_SQUASHFS | sed -e "s# # --overlay $UKBB_SQUASHFS_DIR/#g"),${FAKEBIDS}
+UKBB_OVERLAYS=$(echo "" $UKBB_SQUASHFS | sed -e "s# # --overlay $UKBB_SQUASHFS_DIR/#g"),${FAKEBIDS},${SYMTREE}
 
 module load singularity
 
