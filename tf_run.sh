@@ -45,7 +45,7 @@ SYMTREE=${TASK_ROOT}/ext3_images/symtree.squashfs
 BIDS_DIR="$TASK_ROOT/fake_bids/dwi_subs-${FB}"
 
 # Nextflow trace logs directory
-TRACE_DIR="$TASK_ROOT/sanity_out/nf_traces/"
+TRACE_DIR="$TASK_ROOT/sanity_out/nf_traces"
 
 # Nextflow trace log file
 TRACE_FILE="$TRACE_DIR/trace-${FB}.txt"
@@ -68,15 +68,15 @@ UKBB_SQUASHFS="
   neurohub_ukbb_t1_ses2_0_jsonpatch.squashfs
 "
 
-SING_BINDS=" -H ${OUT_ROOT} $TASK_ROOT -B ${OUT_IMAGE}:${OUT_ROOT}:image-src=/upper "
+SING_BINDS=" -H ${OUT_ROOT} -B ${TASK_ROOT} -B ${OUT_IMAGE}:${OUT_ROOT}:image-src=/upper "
 #SING_BINDS=" -H ${OUT_ROOT} -B ${SYMTREE}:/ $TASK_ROOT -B ${OUT_IMAGE}:${OUT_ROOT}:image-src=/upper "
 UKBB_OVERLAYS=$(echo "" $UKBB_SQUASHFS | sed -e "s# # --overlay $UKBB_SQUASHFS_DIR/#g")
-DWI_OVERLAYS=$(echo "" $DWI_SQUASHFS | sed -e "s# # --overlay $DWI_SQUASHFS_DIR/#g"),${SYMTREE}
+DWI_OVERLAYS="--overlay ${SYMTREE}"
 
 # NOTE: singularity version 3.7.1-1.el7 
 module load singularity/3.7
 
-SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -v exec --cleanenv $SING_BINDS $UKBB_OVERLAYS $DWI_OVERLAYS $SING_TF_IMAGE \
+SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -d exec --cleanenv $SING_BINDS $UKBB_OVERLAYS $DWI_OVERLAYS $SING_TF_IMAGE \
   nextflow -q run /tractoflow/main.nf        \
   --bids          ${BIDS_DIR}             \
   --output_dir    ${OUT_ROOT}             \
