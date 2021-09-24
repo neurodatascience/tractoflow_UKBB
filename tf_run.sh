@@ -25,6 +25,7 @@ set -eu
 
 export FB=$1
 
+
 # In case I forgot to clear $SINGULARITY_BIND
 export SINGULARITY_BIND=""
 
@@ -73,11 +74,13 @@ SING_BINDS=" -H ${OUT_ROOT} -B ${TASK_ROOT} -B ${OUT_IMAGE}:${OUT_ROOT}:image-sr
 UKBB_OVERLAYS=$(echo "" $UKBB_SQUASHFS | sed -e "s# # --overlay $UKBB_SQUASHFS_DIR/#g")
 DWI_OVERLAYS="--overlay ${SYMTREE}"
 
+echo "Starting run-${FB}" | tee >> ${TRACE_FILE}
+
 # NOTE: singularity version 3.7.1-1.el7 
 module load singularity/3.7
 
 SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -d exec --cleanenv $SING_BINDS $UKBB_OVERLAYS $DWI_OVERLAYS $SING_TF_IMAGE \
-  nextflow -q run /tractoflow/main.nf        \
+  nextflow -q run /tractoflow/main.nf     \
   --bids          ${BIDS_DIR}             \
   --output_dir    ${OUT_ROOT}             \
   -w              ${OUT_ROOT}/work        \
