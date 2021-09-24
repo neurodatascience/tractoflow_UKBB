@@ -3,8 +3,8 @@ Workflow and utilities to prepare the UKBB dataset for [Tractoflow](https://gith
 
 ## Scripts
 ### [tf_run.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_run.sh)
-Workflow `slurm` wrapper script for writing output directly to the host filesystem, (depricated)
-### [tf_run_ext3.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_run_ext3.sh)
+Workflow `slurm` wrapper script for writing output directly to the host filesystem
+### [tf_run_ext3.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_run_ext3.sh) (deprecated don't use)
 Workflow `slurm` wrapper script for writing into ext3 loop mounted disk images
 ### [tf_shell_ext3.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_shell_ext3.sh)
 Debugging wrapper script that is identical to [tf_run_ext3.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_run_ext3.sh), except that it initiates a singularity shell session and does not run Nextflow, and thus Tractoflow does not run
