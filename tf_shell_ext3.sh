@@ -12,10 +12,10 @@
 #SBATCH --output=slurm_out/%x-%j.out
 
 # --time is set with the assumption that these runs should take 
-# no more than 21 hours with some slop.
+# no more than 17 hours with some slop.
 
-# This version of the script mounts a loop device mounted ext3 image
-# and initiates a sing shell, and does /not/ run tractoflow
+# This version of the script is for *shell* access to the environment with to a loop mounted ext3 image
+set -eu
 
  if test $# -lt 1 ; then
     echo "Usage: $0 [XXXXX] where XXXXX is a number from 00000 - 10000"
@@ -34,12 +34,21 @@ TASK_ROOT=/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
 # Writable 20G ext3 image file for output
 OUT_IMAGE=${TASK_ROOT}/ext3_images/TF_raw/TF-raw-${FB}.img
 
-# Ouput directory, this is the mounted ext3 image inside the container:
-
+# Ouput directory, this is the loop mounted ext3 image inside the container:
 OUT_ROOT=/TF_OUT/${FB}
+
+# Prepared DWI symlink dir with the generated B0 files
+SYMTREE=${TASK_ROOT}/ext3_images/symtree.squashfs
+#SYMTREE=${TASK_ROOT}/ext3_images/symtree.ext3
 
 # Current fake BIDS
 BIDS_DIR="$TASK_ROOT/fake_bids/dwi_subs-${FB}"
+
+# Nextflow trace logs directory
+TRACE_DIR="$TASK_ROOT/sanity_out/nf_traces"
+
+# Nextflow trace log file
+TRACE_FILE="$TRACE_DIR/trace-${FB}.txt"
 
 # Check that the working dirs are there
 cd $TASK_ROOT || exit
@@ -53,34 +62,22 @@ UKBB_SQUASHFS="
   neurohub_ukbb_dwi_ses2_0_bids.squashfs
   neurohub_ukbb_dwi_ses2_1_bids.squashfs
   neurohub_ukbb_dwi_ses2_2_bids.squashfs
-  neurohub_ukbb_flair_ses2_0_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_0_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_1_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_2_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_3_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_4_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_5_bids.squashfs
-  neurohub_ukbb_rfmri_ses2_6_bids.squashfs
   neurohub_ukbb_t1_ses2_0_bids.squashfs
   neurohub_ukbb_t1_ses3_0_bids.squashfs
   neurohub_ukbb_participants.squashfs
   neurohub_ukbb_t1_ses2_0_jsonpatch.squashfs
 "
-# Prepared DWI simlink dir with the generated B0 files
-DWI_SQUASHFS_DIR=${TASK_ROOT}/squash_tractoflow
-DWI_SQUASHFS="
-  dwipipeline.squashfs
-"
 
-SING_BINDS=" -H ${OUT_ROOT} -B $DWI_SQUASHFS_DIR -B $TASK_ROOT -B ${OUT_IMAGE}:${OUT_ROOT}:image-src=/upper "
+#SING_BINDS=" -H ${OUT_ROOT} -B ${SYMTREE}:/ $TASK_ROOT -B ${OUT_IMAGE}:${OUT_ROOT}:image-src=/upper "
+SING_BINDS=" -H ${OUT_ROOT} -B ${TASK_ROOT} -B ${OUT_IMAGE}:${OUT_ROOT}:image-src=/upper,ro "
 UKBB_OVERLAYS=$(echo "" $UKBB_SQUASHFS | sed -e "s# # --overlay $UKBB_SQUASHFS_DIR/#g")
-DWI_OVERLAYS=$(echo "" $DWI_SQUASHFS | sed -e "s# # --overlay $DWI_SQUASHFS_DIR/#g")
+DWI_OVERLAYS="--overlay ${SYMTREE}"
 
 # NOTE: singularity version 3.7.1-1.el7 
 module load singularity/3.7
 
-SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -v shell --cleanenv $SING_BINDS $UKBB_OVERLAYS $DWI_OVERLAYS $SING_TF_IMAGE \
-#  nextflow run /tractoflow/main.nf        \
+SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -d shell --cleanenv $SING_BINDS $UKBB_OVERLAYS $DWI_OVERLAYS $SING_TF_IMAGE \
+#  nextflow -q run /tractoflow/main.nf     \
 #  --bids          ${BIDS_DIR}             \
 #  --output_dir    ${OUT_ROOT}             \
 #  -w              ${OUT_ROOT}/work        \
@@ -92,8 +89,8 @@ SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -v shell 
 #  --save_seeds    false                   \
 #  -profile        fully_reproducible      \
 #  -resume                                 \
+#  -with-trace     ${TRACE_FILE}           \
 #  -with-report    report.html             \
-#  -with-timeline  timeline.html           \
 #  --processes     4                       \
 #  --processes_brain_extraction_t1 1       \
 #  --processes_denoise_dwi         2       \
@@ -103,4 +100,3 @@ SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -v shell 
 #  --processes_registration        1       \
 
 # previous blank line intentional
-
