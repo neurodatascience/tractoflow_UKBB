@@ -115,7 +115,7 @@ Guillaume ran four subjects twice and confirmed that there the runs were identic
 ## Running Environment Setup
 Simple bash loop is used to submit sbatch tf_run_ext3.sh jobs:
 ```
-for i in {00002..00239} ; do sbatch --job-name=TFUKBB-$i bin/tf_run_ext3.sh $i ; done
+for i in {00002..00239} ; do sbatch --job-name=TFUKBB-$i bin/tf_run.sh $i ; done
 ```
 NOTES: 
 
