@@ -121,7 +121,7 @@ NOTES:
 
 To create a 2.2TB ext3 image file:
 ```
-/usr/sbin/mke2fs -t ext3 -d top -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
+mke2fs -t ext3 -d top -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
 ```
 Check the image, fixing any problems:
 ```
