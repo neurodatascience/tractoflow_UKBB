@@ -18,11 +18,11 @@
 # This version of the script is for *shell* access to the environment with to a loop mounted ext3 image
 set -eu
 
- if test $# -lt 1 ; then
-    echo "Usage: $0 [XXXXX] where XXXXX is a number from 00000 - 10000"
-    echo "      corresponding to the fake_BIDS directory name"
-     exit 2
-   fi
+# if test $# -lt 1 ; then
+#    echo "Usage: $0 [XXXXX] where XXXXX is a number from 00000 - 10000"
+#    echo "      corresponding to the fake_BIDS directory name"
+#     exit 2
+#   fi
 
 # export FB=$1
 # This should format the $FB variable to match the array Task ID
