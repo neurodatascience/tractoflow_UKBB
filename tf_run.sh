@@ -11,16 +11,19 @@ helpstr="$(basename $0) [-c,--chunk INT] [-o,--out PATH] --root DIR
 Processes the specified BIDS DWI dataset using the Tractoflow pipeline.
 
 where:
-  -r,--root DIR         Directory containing Tractoflow-related files (ext3 images, output directory, files to overlay).
-  -c,--chunk INT        Optional. Specify the subject chunk that should be run. Expects values 0-10000. Default: SLURM_TASK_ARRAY_ID
-  -o,--out PATH         Optional. Path to the ext3 image to write. Default: {root}/ext3_images/TF_raw/TF-raw-{chunk}.img
+  -r,--root DIR           Directory containing Tractoflow-related files (ext3 images, output directory, files to overlay).
+  -s,--singularity PATH   Path to the Tractoflow Singularity image.
+  -d,--data
+  -c,--chunk INT          Optional. Specify the subject chunk that should be run. Expects values 0-10000. Default: SLURM_TASK_ARRAY_ID
+  -o,--out PATH           Optional. Path to the ext3 image to write. Default: {root}/ext3_images/TF_raw/TF-raw-{chunk}.img
+
 
 Example:
 sbatch --account ACCOUNT ${0} --root TF_RUN --out /TF-raw-00000.img --singularity tractoflow.sif --data project/ukbb/imaging
 "
 # This version of the script writes to a loop mounted ext3 image
 
-chunk=$(printf "%05d" "${SLURM_TASK_ARRAY_ID}")
+chunk=$(printf "%05d" "${SLURM_ARRAY_TASK_ID}")
 OUT_IMAGE=""
 
 # Parse input arguments
@@ -32,7 +35,7 @@ while (( "$#" )); do
       ;;
     -c|--chunk)
       chunk=$(printf "%05d" "${2}")
-      if [ -n "${SLURM_TASK_ARRAY_ID}" ]; then
+      if [ -n "${SLURM_ARRAY_TASK_ID}" ]; then
         >&2 echo "Chunk is defined, but job is an array. Either remove --chunk or do not submit as an array."
         exit 1
       fi
@@ -81,7 +84,7 @@ OUT_ROOT="/TF_OUT/${chunk}"
 SYMTREE="${TASK_ROOT}/ext3_images/symtree.squashfs"
 
 # Current data subset
-BIDS_DIR="$TASK_ROOT/fake_bids/dwi_subs-${chunk}"
+BIDS_DIR="${TASK_ROOT}/fake_bids/dwi_subs-${chunk}"
 
 # Nextflow trace logs directory
 TRACE_DIR="${TASK_ROOT}/sanity_out/nf_traces"
