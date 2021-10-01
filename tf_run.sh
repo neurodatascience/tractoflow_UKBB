@@ -1,64 +1,113 @@
 #!/bin/bash
-#SBATCH --account=rpp-aevans-ab
-#SBATCH --mail-user=adam.trefonides@mcgill.ca
-#SBATCH --mail-type=BEGIN
-#SBATCH --mail-type=END
-#SBATCH --mail-type=FAIL
-#SBATCH --mail-type=REQUEUE
-#SBATCH --mail-type=ALL
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=2G
 #SBATCH --time=0-20:00:00
 #SBATCH --output=slurm_out/%x-%j.out
+#SBATCH --array=0-10000
 
-# --time is set with the assumption that these runs should take 
-# no more than 17 hours with some slop.
+# --time is set with the assumption that these runs should take no more than 17 hours with some slop.
 
+helpstr="$(basename $0) [-c,--chunk INT] [-o,--out PATH] --root DIR
+Processes the specified BIDS DWI dataset using the Tractoflow pipeline.
+
+where:
+  -r,--root DIR         Directory containing Tractoflow-related files (ext3 images, output directory, files to overlay).
+  -c,--chunk INT        Optional. Specify the subject chunk that should be run. Expects values 0-10000. Default: SLURM_TASK_ARRAY_ID
+  -o,--out PATH         Optional. Path to the ext3 image to write. Default: {root}/ext3_images/TF_raw/TF-raw-{chunk}.img
+
+Example:
+sbatch --account ACCOUNT ${0} --root TF_RUN --out /TF-raw-00000.img --singularity tractoflow.sif --data project/ukbb/imaging
+"
 # This version of the script writes to a loop mounted ext3 image
-set -eu
 
- if test $# -lt 1 ; then
-    echo "Usage: $0 [XXXXX] where XXXXX is a number from 00000 - 10000"
-    echo "      corresponding to the fake_BIDS directory name"
-     exit 2
-   fi
+chunk=$(printf "%05d" "${SLURM_TASK_ARRAY_ID}")
+OUT_IMAGE=""
 
-export FB=$1
+# Parse input arguments
+while (( "$#" )); do
+  case "$1" in
+    -h|--help)
+      echo "${helpstr}"
+      exit 0
+      ;;
+    -c|--chunk)
+      chunk=$(printf "%05d" "${2}")
+      if [ -n "${SLURM_TASK_ARRAY_ID}" ]; then
+        >&2 echo "Chunk is defined, but job is an array. Either remove --chunk or do not submit as an array."
+        exit 1
+      fi
+      shift 2
+      ;;
+    -r|--root)
+      TASK_ROOT="${2}"
+      shift 2
+      ;;
+    -o|--out)
+      OUT_IMAGE="${2}"
+      shift 2
+      ;;
+    -s|--singularity)
+      SING_TF_IMAGE="${2}"
+      shift 2
+      ;;
+    -d|--data)
+      UKBB_SQUASHFS_DIR="${2}"
+      shift 2
+      ;;
+    *)
+      >&2 echo "Unrecognized option ${1}"
+      exit 1
+      ;;
+  esac
+done
 
+export chunk="${chunk}"
 
-# In case I forgot to clear $SINGULARITY_BIND
+# Clear $SINGULARITY_BIND
 export SINGULARITY_BIND=""
 
 # Work directory 
-TASK_ROOT=/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
+#TASK_ROOT=/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
 
-# Writable 20G ext3 image file for output
-OUT_IMAGE=${TASK_ROOT}/ext3_images/TF_raw/TF-raw-${FB}.img
+# Writable ext3 image file for output
+if [ -z "${OUT_IMAGE}" ]; then
+  OUT_IMAGE=${TASK_ROOT}/ext3_images/TF_raw/TF-raw-${chunk}.img
+fi
 
 # Ouput directory, this is the loop mounted ext3 image inside the container:
-OUT_ROOT=/TF_OUT/${FB}
+OUT_ROOT="/TF_OUT/${chunk}"
 
 # Prepared DWI symlink dir with the generated B0 files
-SYMTREE=${TASK_ROOT}/ext3_images/symtree.squashfs
-#SYMTREE=${TASK_ROOT}/ext3_images/symtree.ext3
+SYMTREE="${TASK_ROOT}/ext3_images/symtree.squashfs"
 
-# Current fake BIDS
-BIDS_DIR="$TASK_ROOT/fake_bids/dwi_subs-${FB}"
+# Current data subset
+BIDS_DIR="$TASK_ROOT/fake_bids/dwi_subs-${chunk}"
 
 # Nextflow trace logs directory
-TRACE_DIR="$TASK_ROOT/sanity_out/nf_traces"
+TRACE_DIR="${TASK_ROOT}/sanity_out/nf_traces"
 
 # Nextflow trace log file
-TRACE_FILE="$TRACE_DIR/trace-${FB}.txt"
+TRACE_FILE="${TRACE_DIR}/trace-${chunk}.txt"
 
 # Check that the working dirs are there
-cd $TASK_ROOT || exit
-cd $BIDS_DIR || exit
+if [ ! -d "${TASK_ROOT}" ]; then
+  >&2 echo "Error: ${TASK_ROOT} does not exist"
+  exit 1
+fi
+if [ ! -d "${BIDS_DIR}" ]; then
+  >&2 echo "Error: ${BIDS_DIR} does not exist"
+  exit 1
+fi
 
-SING_TF_IMAGE=$TASK_ROOT/tractoflow.sif
+if [ -z "${SING_TF_IMAGE}" ]; then
+  SING_TF_IMAGE="${TASK_ROOT}/tractoflow.sif"
+  echo "Warning: Defaulting to ${SING_TF_IMAGE} for Singularity image."
+fi
 
 # UKBB squashfs files
-UKBB_SQUASHFS_DIR=/project/6008063/neurohub/ukbb/imaging
+if [ -z "${UKBB_SQUASHFS_DIR}" ]; then
+  UKBB_SQUASHFS_DIR=/project/6008063/neurohub/ukbb/imaging
+fi
 UKBB_SQUASHFS="
   neurohub_ukbb_dwi_ses2_0_bids.squashfs
   neurohub_ukbb_dwi_ses2_1_bids.squashfs
@@ -74,16 +123,16 @@ SING_BINDS=" -H ${OUT_ROOT} -B ${TASK_ROOT} -B ${OUT_IMAGE}:${OUT_ROOT}:image-sr
 UKBB_OVERLAYS=$(echo "" $UKBB_SQUASHFS | sed -e "s# # --overlay $UKBB_SQUASHFS_DIR/#g")
 DWI_OVERLAYS="--overlay ${SYMTREE}"
 
-echo "Starting run-${FB}" | tee >> ${TRACE_FILE}
+echo "Starting run-${chunk}" | tee >> ${TRACE_FILE}
 
 # NOTE: singularity version 3.7.1-1.el7 
 module load singularity/3.7
 
-SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -d exec --cleanenv $SING_BINDS $UKBB_OVERLAYS $DWI_OVERLAYS $SING_TF_IMAGE \
+SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -d exec --cleanenv ${SING_BINDS} ${UKBB_OVERLAYS} ${DWI_OVERLAYS} ${SING_TF_IMAGE} \
   nextflow -q run /tractoflow/main.nf     \
-  --bids          ${BIDS_DIR}             \
-  --output_dir    ${OUT_ROOT}             \
-  -w              ${OUT_ROOT}/work        \
+  --bids          "${BIDS_DIR}"             \
+  --output_dir    "${OUT_ROOT}"             \
+  -w              "${OUT_ROOT}"/work        \
   --dti_shells    "1 1000"                \
   --fodf_shells   "0 1000 2000"           \
   --step          0.5                     \
@@ -92,7 +141,7 @@ SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -d exec -
   --save_seeds    false                   \
   -profile        fully_reproducible      \
   -resume                                 \
-  -with-trace     ${TRACE_FILE}           \
+  -with-trace     "${TRACE_FILE}"           \
   -with-report    report.html             \
   --processes     4                       \
   --processes_brain_extraction_t1 1       \
