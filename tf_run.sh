@@ -89,6 +89,13 @@ TRACE_DIR="${TASK_ROOT}/sanity_out/nf_traces"
 # Nextflow trace log file
 TRACE_FILE="${TRACE_DIR}/trace-${chunk}.txt"
 
+# Nextflow by default saves working logs in the directory from which it's launched, doing this will avoid clobbering.
+LOG_DIR="${TASK_ROOT}/logs/${chunk}"
+mkdir -p ${LOG_DIR}
+TRACE_FILE="${LOG_DIR}/trace.txt"
+# Make the working directory ${LOG_DIR} 
+cd ${LOG_DIR}
+
 # Check that the working dirs are there
 if [ ! -d "${TASK_ROOT}" ]; then
   >&2 echo "Error: ${TASK_ROOT} does not exist"
@@ -130,9 +137,9 @@ module load singularity/3.7
 
 SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -d exec --cleanenv ${SING_BINDS} ${UKBB_OVERLAYS} ${DWI_OVERLAYS} ${SING_TF_IMAGE} \
   nextflow -q run /tractoflow/main.nf     \
-  --bids          "${BIDS_DIR}"             \
-  --output_dir    "${OUT_ROOT}"             \
-  -w              "${OUT_ROOT}"/work        \
+  --bids          "${BIDS_DIR}"           \
+  --output_dir    "${OUT_ROOT}"           \
+  -w              "${OUT_ROOT}"/work      \
   --dti_shells    "1 1000"                \
   --fodf_shells   "0 1000 2000"           \
   --step          0.5                     \
@@ -141,8 +148,7 @@ SINGULARITYENV_NXF_CLUSTER_SEED=$(shuf -i 0-16777216 -n 1) singularity -d exec -
   --save_seeds    false                   \
   -profile        fully_reproducible      \
   -resume                                 \
-  -with-trace     "${TRACE_FILE}"           \
-  -with-report    report.html             \
+  -with-trace     "${TRACE_FILE}"         \
   --processes     4                       \
   --processes_brain_extraction_t1 1       \
   --processes_denoise_dwi         2       \
