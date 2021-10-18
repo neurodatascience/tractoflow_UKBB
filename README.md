@@ -166,21 +166,7 @@ Singularity> while read SID ; do cat /OUT_DIR/${SID}__avg.txt >> SID_all00.lf; e
 ```
 
 ### From Etienne:
-I managed to get some time and created a script to compute outliers :
-https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_outliers_from_avg.py
 
-For simplicity, the input is the list of .txt files.
-It was the safest/easiest way to manage empty lines (missing subjects).
-It sadly requires to be launched after the previous "scil_compute_avg_in_maps.py",
-but it's very fast, so it can be computed on an interactive node (single core).
-(The output/print is a list of outliers)
-
-
-```
-python scil_compute_outliers_from_avg.py Sanity_Out/*.txt  \
-    --masks_name   map_wm  map_csf  map_gm \
-    --metrics_name  ad  fa  md  afd_total  volume
-```
 The "--masks_name " and "--metrics_name" needs to be in the same order (from the previous script)
 (+ the "volume", if it was used with "--masks_sum"
 ```
@@ -196,6 +182,23 @@ scil_compute_avg_in_maps.py \
   --indent 4 --masks_sum \
   --save_avg ${SID}__avg.txt
 ```
+
+I managed to get some time and created a script to compute outliers :
+https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_outliers_from_avg.py
+
+For simplicity, the input is the list of .txt files.
+It was the safest/easiest way to manage empty lines (missing subjects).
+It sadly requires to be launched after the previous "scil_compute_avg_in_maps.py",
+but it's very fast, so it can be computed on an interactive node (single core).
+(The output/print is a list of outliers)
+
+
+```
+python scil_compute_outliers_from_avg.py Sanity_Out/*.txt  \
+    --masks_name   map_wm  map_csf  map_gm \
+    --metrics_name  ad  fa  md  afd_total  volume
+```
+
 
 ### Logs [Needs update]
 *Stuff about logging here, ie.: some logs are going into the ext3 image, some are being written to the filesystem, there is method to the madness, document it*
