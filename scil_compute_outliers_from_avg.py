@@ -85,9 +85,11 @@ def main():
     error_list = np.argwhere(err_mask)
     warn_list = np.argwhere(warn_mask)
 
+    print("Empty files")
     for f in empty_files:
-        print(f"Empty file, {f}")
+        print(f)
 
+    print("Errors")
     for (id, row, col) in error_list:
         f_name = non_empty_files[id]
         z = full_zscore[id, row, col]
@@ -95,8 +97,9 @@ def main():
             row = args.masks_name[row]
         if args.metrics_name:
             col = args.metrics_name[col]
-        print(f"Error, {f_name}, in {row} with {col}, zscore : {z}")
+        print("Error, " + f_name + ", in " + row + " with" +  col + ", zscore : " + z)
 
+    print("Warning")
     for (id, row, col) in warn_list:
         f_name = non_empty_files[id]
         z = full_zscore[id, row, col]
@@ -104,7 +107,7 @@ def main():
             row = args.masks_name[row]
         if args.metrics_name:
             col = args.metrics_name[col]
-        print(f"Warning, {f_name}, in {row} with {col}, zscore : {z}")
+        print("Warning, " + f_name + ", in " + row + " with" +  col + ", zscore : " + z)
 
 
 if __name__ == "__main__":
