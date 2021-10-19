@@ -112,13 +112,22 @@ Guillaume confirmed the irreproducibility problem and found an error in the way 
 `export ANTS_RANDOM_SEED=1234` https://github.com/scilus/tractoflow/pull/46
 
 Guillaume ran four subjects twice and confirmed that there the runs were identical. Adam ran a similar test with an updated container supplied by Arnaud and there were no differences in file size between the two runs. 
-## Running Environment Setup
-Simple bash loop is used to submit sbatch tf_run_ext3.sh jobs:
-```
-for i in {00002..00239} ; do sbatch --job-name=TFUKBB-$i bin/tf_run.sh $i ; done
-```
-NOTES: 
 
+>>> STUBS --- NEED TO FLESH OUT <<<
+## Running 
+### Environment Setup
+#### squashfs mounts
+##### creating
+#### symlink farms
+##### creating
+#### ext3 images
+##### creating
+### Submitting the batch job
+### Monitoring
+## Post Processing the output
+### Creating the squashfs
+
+# DEPRICATED -- REMOVE / MODIFY FOR CURRENT SETUP 
 To create a 2.2TB ext3 image file:
 ```
 mke2fs -t ext3 -d top -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
@@ -144,6 +153,7 @@ rsync -aL /TF_OUT/{00120..00159}/sub-*  /neurohub/ukbb/imaging/derivatives/tract
 rsync -aL /TF_OUT/{00160..00199}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01b_derivatives.log &
 rsync -aL /TF_OUT/{00200..00239}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01c_derivatives.log &
 ```
+
 ### Programatic Sanity Checks
 `sanity_check_example.sh` is an example of running the first level of a simple sanity check using the script written by Etienne St-Onge called `scil_compute_avg_in_maps.py` on the TF output.  It generates a comma delimited set of results from an analysis of the derived images  *I need Etienne to fill out some details here*
 
@@ -167,8 +177,7 @@ Singularity> while read SID ; do cat /OUT_DIR/${SID}__avg.txt >> SID_all00.lf; e
 
 ### From Etienne:
 
-The "--masks_name " and "--metrics_name" needs to be in the same order (from the previous script)
-(+ the "volume", if it was used with "--masks_sum"
+
 ```
 scil_compute_avg_in_maps.py \
   ${SID}/Segment_Tissues/${SID}__map_wm.nii.gz \
@@ -183,8 +192,16 @@ scil_compute_avg_in_maps.py \
   --save_avg ${SID}__avg.txt
 ```
 
-I managed to get some time and created a script to compute outliers :
+I've done a preliminary run of that script, the results can be found in:
+```
+/lustre04/scratch/atrefo/sherbrooke/sanity_chk/scil_compute_avg_in_maps
+```
+
+This is a script to compute outliers:
 https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_outliers_from_avg.py
+
+The "--masks_name " and "--metrics_name" needs to be in the same order (from the scil_compute_avg_in_maps.py script)
+(+ the "volume", if it was used with "--masks_sum"
 
 For simplicity, the input is the list of .txt files.
 It was the safest/easiest way to manage empty lines (missing subjects).
@@ -192,19 +209,53 @@ It sadly requires to be launched after the previous "scil_compute_avg_in_maps.py
 but it's very fast, so it can be computed on an interactive node (single core).
 (The output/print is a list of outliers)
 
-
+Example, it needs to be run in a tractoflow container (see below):
 ```
-python scil_compute_outliers_from_avg.py Sanity_Out/*.txt  \
+scil_compute_outliers_from_avg.py Sanity_Out/*.txt  \
     --masks_name   map_wm  map_csf  map_gm \
     --metrics_name  ad  fa  md  afd_total  volume
 ```
+Loop example for outliers, use `sanity_check.sh`:
+
+```
+for chunk in {00100..00999} ; 
+ do echo Doing ${chunk} ;
+  singularity exec --cleanenv \
+  -B ext3_images/TF-OUT_symlink.img:/TF_OUT:image-src=/upper,ro \
+  --overlay ext3_images/TF_raw/TF-raw-${chunk}.img:ro \
+  -H /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN \
+  -B /lustre04/scratch/atrefo/sherbrooke/sanity_chk:/sanity_chk \
+  tractoflow.sif \
+  bin/tractoflow_UKB/sanity_check.sh; 
+ done >> sanity_out/logs/scil_compute_avg_in_maps_1.log 2>&1  &
+```
+The log file is so you can monitor how it's running.  This should/could be keyed off the subjectIDs, but you will need to know the `chunk` number, because all the ext3 images are keyted off that number.  It should/could also be turned into either a slurm batch job or tacked on to the end of the tractoflow run.
 
 
-### Logs [Needs update]
-*Stuff about logging here, ie.: some logs are going into the ext3 image, some are being written to the filesystem, there is method to the madness, document it*
+### Logs
 
-Nextflow logs
-slurm.out
+Nextflow by default saves working logs in the directory from which it's launched, doing this will avoid clobbering.
+
+```
+LOG_DIR="${TASK_ROOT}/logs/${chunk}"
+mkdir -p ${LOG_DIR}
+TRACE_FILE="${LOG_DIR}/trace.txt"
+cd ${LOG_DIR}
+```
+The nextflow trace logs can be found at:
+
+```
+/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/logs/<chunk>/trace.txt
+```
+To get a count of the successful tractoflow runs do this from within that directory:
+
+`grep -w PFT_Tracking */trace.txt| wc -l`
+
+The slurm logs are saved into the following directory (Lex is running the job so it's writing into his space):
+```
+/lustre04/scratch/ahutton/tractoflow_UKBB/slurm_out
+```
+The slurm logs can be consulted for runtime errors.
 
 ### Performance and Scalability
 *stuff about why 4 subjects is sweet sweet majik*
