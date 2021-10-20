@@ -106,8 +106,7 @@ Guillaume confirmed the irreproducibility problem and found an error in the way 
 
 Guillaume ran four subjects twice and confirmed that there the runs were identical. Adam ran a similar test with an updated container supplied by Arnaud and there were no differences in file size between the two runs. 
 
->>> STUBS --- NEED TO FLESH OUT <<<
-## Running 
+## Running The Pipeline 
 ### Environment Setup
 #### squashfs mounts
 The followig UKBB squashfs inages are used for this pipeline:
@@ -120,13 +119,19 @@ The followig UKBB squashfs inages are used for this pipeline:
   neurohub_ukbb_participants.squashfs
   neurohub_ukbb_t1_ses2_0_jsonpatch.squashfs
   ```
-##### creating
 #### symlink farms
-There are two "symlink farms".  These are file trees made up primarily of symlinks that point into the UKBiobank BIDS file tree
+There are two primary "symlink farms", `/dwipipeline` and `fakebids`.  These are file trees made up primarily of symlinks that point into the UKBiobank BIDS file tree. `/dwipipeline` is a symlink tree that only includes links to the subject files that have all the image data that tractoflow requires.  `/dwipipeline` is stored in a squashfs image at `/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/ext3_images/symtree.squashfs` that is overlayed in the tractoflow container.  `fakebids` is a file tree at `/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/fake_bids`   This could have been simplified in a number of ways, but this works.
 ##### creating
+The logic for creating the symlink farms is in the [tf_ukbb_bids_prep.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_ukbb_bids_prep.sh) script
 #### ext3 images
+The ext3 writable images are in /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/ext3_images/TF_raw. They are named by chunk, thus: `TF-raw-${chunk}.img` In order to be able to overlay mount the ext3 images they must be created with a file structre like this:
+```
+/top
+ ├─ uppper
+ └─ work
+```
 ##### creating
-From using a version of `mkfs.ext3` that supports the `-d directory` option this command is run to create 9,581 initial 20GB ext3 images:
+Use a version of `mkfs.ext3` that supports the `-d directory` option. This command was run to create 9,581 initial 20GB ext3 images:
 ```
 $ cd /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/ext3_images/TF_raw 
 $ for i in {00000..09581}; do mkfs.ext3 -d top -F -m 0 -b 4096 -N 100000 ./TF-raw-$i.img 20g; done
@@ -134,74 +139,34 @@ $ for i in {00000..09581}; do mkfs.ext3 -d top -F -m 0 -b 4096 -N 100000 ./TF-ra
 It is important to set permissions on the `top` and `top/upper` directories, specifically they need to be world rw and must not have any extended ACLs applied.
 
 ### Submitting the batch job
+	(*Lex: could you flesh this out, please?*)
 ### Monitoring
-## Post Processing the output
-### Creating the squashfs
-
-# DEPRICATED -- REMOVE / MODIFY FOR CURRENT SETUP 
-To create a 2.2TB ext3 image file:
+#### Checking on what's running
+`sacct -u ahutton -S 10/16 -o Jobid%21,Start,End,Elapsed,State%20`
+#### counting how many subjects have completed
 ```
-mke2fs -t ext3 -d top -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
-```
-Check the image, fixing any problems:
-```
-e2fsck -yf neurohub_ukbb_tractoflow_00_derivatives.ext3
+$ cd projects/rpp-aevans-ab/atrefo/sherbrooke/TF_RUN/logs/
+$ grep -w PFT_Tracking */trace.txt| wc -l
 ```
 
-In order to rsync the individual runs into the 2.2TB image set the `SINGULARITY_BIND` variable like this, changing the $M setting to the range of the runs being worked on:
-```
-export SINGULARITY_BIND=home_atrefo.img:/home/atrefo:image-src=/upper/atrefo,\
-neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub:image-src=/upper,\
-`for M in {00000..00119}; do echo "TF-raw-${M}.img:/TF_OUT/${M}:image-src=/upper/${M},ro" | tr '\n' ',' ; done`
-```
-This is how to rsync the data:
-```
-rsync -vaL /TF_OUT/*/sub-* /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3.log
-```
-It can be sped up by making it parallel-ish:
-```
-rsync -aL /TF_OUT/{00120..00159}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01a_derivatives.log &
-rsync -aL /TF_OUT/{00160..00199}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01b_derivatives.log &
-rsync -aL /TF_OUT/{00200..00239}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01c_derivatives.log &
-```
+#### Programatic Sanity Checks
+(*Etienne, please put some details in here, thanks*)
 
-### Programatic Sanity Checks
-`sanity_check_example.sh` is an example of running the first level of a simple sanity check using the script written by Etienne St-Onge called `scil_compute_avg_in_maps.py` on the TF output.  It generates a comma delimited set of results from an analysis of the derived images  *I need Etienne to fill out some details here*
-
-This sets `SINGULARITY_BIND` to mount the 2TB ext3 image and a directory on the host that is used for the sanity check output: 
+Etienne St-Onge wrote a set of scripts, one to gather data about the subjects, `scil_compute_avg_in_maps.pl` and one to calculate averages and find outliers
+Here is an example comandline for runing [scil_compute_avg_in_maps.pl](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.pl)
 ```
-$ cd /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN
-
-$ export SINGULARITY_BIND=ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub_00:image-src=/upper,ro,/lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/sanity_out:/OUT_DIR:rw
-
-$ singularity -v shell --cleanenv tractoflow.sif
+for chunk in {00100..00999} ; 
+ do echo Doing ${chunk} ;
+  singularity exec --cleanenv \
+  -B ext3_images/TF-OUT_symlink.img:/TF_OUT:image-src=/upper,ro \
+  --overlay ext3_images/TF_raw/TF-raw-${chunk}.img:ro \
+  -H /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN \
+  -B /lustre04/scratch/atrefo/sherbrooke/sanity_chk:/sanity_chk \
+  tractoflow.sif \
+  bin/tractoflow_UKB/sanity_check.sh; 
+ done >> sanity_out/logs/scil_compute_avg_in_maps_1.log 2>&1  &
 ```
-To run the `sanity_check_example.sh` You may need to get this directory in your path:
-```
-Singularity> PATH=$PATH:/home/atrefo/bin/tractoflow_UKBB
-Singularity> sanity_check_example.sh SID00.list
-```
-This oneliner cats the output from all the sanity checks into a single file, inserting a linefeed between subjects:
-```
-Singularity> while read SID ; do cat /OUT_DIR/${SID}__avg.txt >> SID_all00.lf; echo  >> SID_all00.lf ;done < SID00.list
-```
-
-### From Etienne:
-
-
-```
-scil_compute_avg_in_maps.py \
-  ${SID}/Segment_Tissues/${SID}__map_wm.nii.gz \
-  ${SID}/Segment_Tissues/${SID}__map_csf.nii.gz \
-  ${SID}/Segment_Tissues/${SID}__map_gm.nii.gz \
-  --metrics \
-    ${SID}/DTI_Metrics/${SID}__ad.nii.gz \
-    ${SID}/DTI_Metrics/${SID}__fa.nii.gz \
-    ${SID}/DTI_Metrics/${SID}__md.nii.gz \
-    ${SID}/FODF_Metrics/${SID}__afd_total.nii.gz \
-  --indent 4 --masks_sum \
-  --save_avg ${SID}__avg.txt
-```
+The log file is so you can monitor how it's running.  This should/could be keyed off the subjectIDs, but you will need to know the `chunk` number, because all the ext3 images are keyted off that number.  It should/could also be turned into either a slurm batch job or tacked on to the end of the tractoflow run.
 
 I've done a preliminary run of that script, the results can be found in:
 ```
@@ -209,7 +174,7 @@ I've done a preliminary run of that script, the results can be found in:
 ```
 
 This is a script to compute outliers:
-https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_outliers_from_avg.py
+[scil_compute_outliers_from_avg.py](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_outliers_from_avg.py)
 
 The "--masks_name " and "--metrics_name" needs to be in the same order (from the scil_compute_avg_in_maps.py script)
 (+ the "volume", if it was used with "--masks_sum"
@@ -226,22 +191,47 @@ scil_compute_outliers_from_avg.py Sanity_Out/*.txt  \
     --masks_name   map_wm  map_csf  map_gm \
     --metrics_name  ad  fa  md  afd_total  volume
 ```
-Loop example for outliers, use `sanity_check.sh`:
+## Post Processing the output
+### Collating Produced Data Into Squashfs Images
+#### ext3 staging and rsyncing
+The data needs to be packaged into squashfs images of about 2TB each.  To do this I propose the following process:
 
-```
-for chunk in {00100..00999} ; 
- do echo Doing ${chunk} ;
-  singularity exec --cleanenv \
-  -B ext3_images/TF-OUT_symlink.img:/TF_OUT:image-src=/upper,ro \
-  --overlay ext3_images/TF_raw/TF-raw-${chunk}.img:ro \
-  -H /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN \
-  -B /lustre04/scratch/atrefo/sherbrooke/sanity_chk:/sanity_chk \
-  tractoflow.sif \
-  bin/tractoflow_UKB/sanity_check.sh; 
- done >> sanity_out/logs/scil_compute_avg_in_maps_1.log 2>&1  &
-```
-The log file is so you can monitor how it's running.  This should/could be keyed off the subjectIDs, but you will need to know the `chunk` number, because all the ext3 images are keyted off that number.  It should/could also be turned into either a slurm batch job or tacked on to the end of the tractoflow run.
+0. Create a 2.2T ext3 image
+1. Mount as many 20G ext3 images as possible (I've successfully mounted 120 at a time, YMMV) along with a writable 2TB ext3 image into a singularity container with rsync installed.
+2. rsync the data from the 20G ext3 images into the 2.2T image
+3. Rinse repeat until the 2.2T image is full
+4. go to 0
 
+To create a 2.2TB ext3 image file:
+```
+mke2fs -t ext3 -d top -F -m 0 -N 2200000 neurohub_ukbb_tractoflow_00_derivatives.ext3 2200G
+```
+Check the image, fixing any problems:
+```
+e2fsck -yf neurohub_ukbb_tractoflow_00_derivatives.ext3
+```
+
+In order to rsync the individual runs into the 2.2TB image set the `SINGULARITY_BIND` variable like this, changing the $M setting to the range of the runs being worked on:
+```
+$ cd /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/ext3_images
+$ export SINGULARITY_BIND=neurohub_ukbb_tractoflow_00_derivatives.ext3:/neurohub:image-src=/upper,\
+`for M in {00000..00119}; do echo "TF-raw-${M}.img:/TF_OUT/${M}:image-src=/upper/${M},ro" | tr '\n' ',' ; done`
+```
+This is how to rsync the data:
+```
+$ singularity exec --cleanenv ubuntu_V20.sif \
+  rsync -vaL /TF_OUT/*/sub-* /neurohub/ukbb/imaging/derivatives/tractoflow/ \
+  --log-file=/ext3_images/neurohub_ukbb_tractoflow_00_derivatives.ext3.log
+```
+
+It can be sped up by making it parallel-ish:
+```
+rsync -aL /TF_OUT/{00120..00159}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01a_derivatives.log &
+rsync -aL /TF_OUT/{00160..00199}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01b_derivatives.log &
+rsync -aL /TF_OUT/{00200..00239}/sub-*  /neurohub/ukbb/imaging/derivatives/tractoflow/ --log-file=/ext3_images/neurohub_ukbb_tractoflow_01c_derivatives.log &
+```
+#### Creating Final squashfs images
+ (*Lex,could you help with this part, please?*)
 
 ### Logs
 
@@ -286,6 +276,3 @@ $ sacct -u ahutton -S 10/16 -o Jobid%21,Start,End,Elapsed,State%20| grep FAILURE
 ```
 
 Failures will need to be investigated to determine the actual reason for the failure.  It's likely that only a subset of the subjects in a given chunk will have failed, in which case it may make more sense to segregate the failed subject output from the successfull subjects, and then create new ext3 images with new chunk numbers and new fakebids directories for the subjects you want to re-run.
-
-
-
