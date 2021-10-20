@@ -4,12 +4,13 @@ Workflow and utilities to prepare the UKBB dataset for [Tractoflow](https://gith
 ## Scripts
 ### [tf_run.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_run.sh)
 Workflow `slurm` wrapper script for writing into ext3 loop mounted disk images
-### [tf_run_ext3.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_run_ext3.sh) (deprecated don't use)
-Workflow `slurm` wrapper script for writing into ext3 loop mounted disk images
 ### [tf_shell_ext3.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_shell_ext3.sh)
-Debugging wrapper script that is identical to [tf_run_ext3.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_run_ext3.sh), except that it initiates a singularity shell session and does not run Nextflow, and thus Tractoflow does not run
+Debugging wrapper script that is identical to [tf_run.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_run.sh), except that it initiates a singularity `shell` session and does not run Nextflow, and thus Tractoflow does not run, used for testing
 ### [tf_ukbb_bids_prep.sh](https://github.com/neurodatascience/tractoflow_UKBB/blob/main/tf_ukbb_bids_prep.sh) *To be run inside a singularity shell session using the Tractoflow container* 
-Prepares a working environment in the format that Tractoflow expects.  Specifically, it creates a symlink tree that is populated with links to the (squashfs overlayed) Neurohub UKB BIDS directories, which is to be used as the BIDS directory, it runs [scil_extract_b0.py](https://github.com/scilus/scilpy/blob/master/scripts/scil_extract_b0.py) , and creates `fmap/"${sub}"_ses-2_acq-PA_epi.json` 
+Prepares a working environment in the format that Tractoflow expects.  Specifically, it creates a symlink tree that is populated with links to the (squashfs overlayed) Neurohub UKB BIDS directories, which is to be used as the BIDS directory, it runs [scil_extract_b0.py](https://github.com/scilus/scilpy/blob/master/scripts/scil_extract_b0.py) , and creates `fmap/"${sub}"_ses-2_acq-PA_epi.json`
+### [scil_compute_avg_in_maps.pl](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.pl) 
+### [scil_compute_outliers_from_avg.py](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_outliers_from_avg.py)
+### [sanity_check.sh](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/sanity_check.sh)
 
 ## Background
 ### Issues and Solutions
@@ -155,7 +156,7 @@ $ grep -w PFT_Tracking */trace.txt| wc -l
 Etienne St-Onge wrote a set of scripts, one to gather data about the subjects, `scil_compute_avg_in_maps.pl` and one to calculate averages and find outliers
 Here is an example comandline for runing [scil_compute_avg_in_maps.pl](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.pl)
 ```
-for chunk in {00100..00999} ; 
+$ for chunk in {00100..00999} ; 
  do echo Doing ${chunk} ;
   singularity exec --cleanenv \
   -B ext3_images/TF-OUT_symlink.img:/TF_OUT:image-src=/upper,ro \
