@@ -139,7 +139,7 @@ $ for i in {00000..09581}; do mkfs.ext3 -d top -F -m 0 -b 4096 -N 100000 ./TF-ra
 It is important to set permissions on the `top` and `top/upper` directories, specifically they need to be world rw and must not have any extended ACLs applied.
 
 ### Submitting the batch job
-	(*Lex: could you flesh this out, please?*)
+(*Lex: could you flesh this out, please?*)
 ### Monitoring
 #### Checking on what's running
 `sacct -u ahutton -S 10/16 -o Jobid%21,Start,End,Elapsed,State%20`
