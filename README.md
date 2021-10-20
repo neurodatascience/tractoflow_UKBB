@@ -258,7 +258,7 @@ The nextflow trace logs can be found at:
 ```
 /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/logs/<chunk>/trace.txt
 ```
-To get a count of the successful tractoflow runs do this from within that directory:
+To get a count of the successful tractoflow runs do this from within the `logs` directory:
 
 `grep -w PFT_Tracking */trace.txt| wc -l`
 
