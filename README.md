@@ -268,7 +268,7 @@ The slurm logs are saved into the following directory (Lex is running the job so
 ```
 The slurm logs can be consulted for runtime errors.
 
-### Afdter initial run - Cleanup
+### After initial run - Cleanup
 I've identified a number of reasons that a run could could fail:
 #### Timeouts
 In my initial testing it took between 12 and 18 hours clock-time to run a single subject or 4 subjects.  More than 4 subjects in a simgle run could take significantly more clock time.  We began runs using 20 hour runtime requests and noted 178 TIMEOUT errors out of 1000 chunks.  We increased the runtime request to 30 hours. As of this writing (oct 20, 2021) we've seen 66 more timeouts in 2,585 runs.  All of the chunks that timed out should be rerun with a longer runtime requested.  This could be done at the end of the initial run, or could be done in parallel.  NOTE: Before rerunning a chunk the ext3 images will need to be reset and the logs from the initial run moved out of the way.
