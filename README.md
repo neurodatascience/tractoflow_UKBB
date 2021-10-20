@@ -120,10 +120,9 @@ The followig UKBB squashfs inages are used for this pipeline:
   neurohub_ukbb_participants.squashfs
   neurohub_ukbb_t1_ses2_0_jsonpatch.squashfs
   ```
-  
 ##### creating
 #### symlink farms
-There are teo "symlink farms".  These are file trees made up primarily of symlinks that point into the UKBiobank BIDS file tree
+There are two "symlink farms".  These are file trees made up primarily of symlinks that point into the UKBiobank BIDS file tree
 ##### creating
 #### ext3 images
 ##### creating
@@ -273,4 +272,14 @@ The slurm logs can be consulted for runtime errors.
 I've identified a number of reasons that a run could could fail:
 #### Timeouts
 In my initial testing it took between 12 and 18 hours clock-time to run a single subject or 4 subjects.  More than 4 subjects in a simgle run could take significantly more clock time.  We began runs using 20 hour runtime requests and noted 178 TIMEOUT errors out of 1000 chunks.  We increased the runtime request to 30 hours. As of this writing (oct 20, 2021) we've seen 66 more timeouts in 2,585 runs.  All of the chunks that timed out should be rerun with a longer runtime requested.  This could be done at the end of the initial run, or could be done in parallel.  NOTE: Before rerunning a chunk the ext3 images will need to be reset and the logs from the initial run moved out of the way.
+
+Here is some example comandline code for resetting the ext3 image files for chunks that timed out (EXAMPLE ONLY! not fully tested, please confirm this makes sense before you run this):
+```
+$ cd TF_RUN
+$ sacct -u ahutton -S 10/16 -o Jobid%21,Start,End,Elapsed,State%20| grep TIME | awk '{print $1}' | awk -F _ '{ printf "%05d \n", $2 }' >> timeout_chunks.txt
+$ while read chunk; do mkfs.ext3 -d top -F -m 0 -b 4096 -N 100000 ext3_images/TF_raw/TF-raw-${chunk}.img 20g ; done < timeout_chunks.txt 
+$ while read chunk; do e2fsck -yf ext3_images/TF_raw//TF-raw-${chunk}.img ; done < timeout_chunks.txt
+```Failures will need to be investigated to determine the actual reason for the failure.  It's likely that only a subset of the subjects in a given chunk will have failed, in which case it may make more sense to segregate the failed subject output from the successfull subjects, and then create new ext3 images with new chunk numbers and new fakebids directories for the subjects you want to re-run.
+
+
 
