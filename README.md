@@ -13,10 +13,10 @@ Prepares a working environment in the format that Tractoflow expects.  Specifica
 
 ## Background
 ### Issues and Solutions
-On beluga the UKBiobank dataset is stored in squashfs files and are accessed by *overlay* mounting them within a singularity container.  The Tractoflow pipeline requires [Nextflow](https://www.nextflow.io) to manage the pipeline.  In the default configuration Tractoflow runs within a singularity container that is launched by nextflow.  This was impossible to run with the UKBB squashed dataset.  Nextflow would not pass the `--overlay` directives down to the singularithy instance.  Our solution is to invert the relationship: we run a Tractoflow singularity container that includes Nextflow within it.  In this way we can overlay the squashfs files onto the container instance, define a Tractoflow friendly BIDS compliant directory at the root, and then run the Tractoflow pipeline on that.
+On beluga the UKBiobank dataset is stored in squashfs files and are accessed by *overlay* mounting them within a singularity container, see [NeuroHub documentation](https://github.com/neurohub/neurohub_documentation/wiki/5.2.Accessing-Data#singularity-image).  The Tractoflow pipeline requires [Nextflow](https://www.nextflow.io) to manage the pipeline.  In the default configuration Tractoflow runs within a singularity container that is launched by nextflow.  This was impossible to run with the UKBB squashed dataset.  Nextflow would not pass the `--overlay` directives down to the singularity instance.  My solution is to invert the relationship: I run a Tractoflow singularity container that includes Nextflow within it.  In this way I can overlay the squashfs files onto the container instance, define a Tractoflow friendly BIDS compliant directory at the root, and then run the Tractoflow pipeline on that.
 
 #### DWI Correction
-I was not able to get a complete run of Tractoflow on the UKBB BIDS dataset.  It failed, according to Arnaud, because tractoflow is not ready yet for a full AP/PA dwi correction and ends up with conflicts. He suggested that we do the following:
+I was not able to get a complete run of Tractoflow on the UKBB BIDS dataset.  It failed, according to Arnaud, because tractoflow is not ready yet for a full AP/PA dwi correction and ends up with conflicts. He suggested that I do the following:
 	
 Choose which direction (AP or PA) will be the "main" direction.
 1. use `scil_extract_b0.py` that's included in the Tractoflow singularity container to extract the file called `fmap/sub-*_epi.nii.gz`. 
@@ -44,26 +44,17 @@ Squashfs files are by design read-only, so to make this work I created the symli
 I deleted the symlinks that pointed to the PA direction files and saved that as a squashfs image.  By overlaying that squashfs onto the contianer along with the UKBB squashfs images I can point at the file tree in it 
 
 #### Missing PA_dwi.json files [Needs update]
-There are about 8,000 subjects in the UKBB dataset without `*PA_dwi.json` files.  In our initial runs we simply ignored these subjects by removing the symlinks that point to their BIDS directory.  When the dwi dataset has been cleaned up by Lex the `tf_ukbb_bids_prep.sh` script will need to be re-run.  A check for already existing files could (should?) be run so we're not duplicating effort.  Note: it is also possible (likely?) that `scil_extract_b0.py`will have different results each time it's run, this shouldn't be an issue as long as the derivitives and the b0 extractions are from matched runs.
+There are about 8,000 subjects in the UKBB dataset without `*PA_dwi.json` files.  In our initial runs I simply ignored these subjects by removing the symlinks that point to their BIDS directory.  When the dwi dataset has been cleaned up by Lex the `tf_ukbb_bids_prep.sh` script will need to be re-run.  A check for already existing files could (should?) be run so we're not duplicating effort.  Note: it is also possible (likely?) that `scil_extract_b0.py`will have different results each time it's run, this shouldn't be an issue as long as the derivitives and the b0 extractions are from matched runs.
 
 ### inode Limits
 beluga uses the Lustre distributed file system. File system performance suffers significantly with lots of files and so inode quotas are strictly enforced.  Tractoflow generartes 109 files for each subject.  A complete run of all 45,000 subjects would have an adverse effect on the performance of the file system, as well as running us over quota eventually.
 
 ### Process Run Time
-beluga enforces a strict 7 day limit on process run time.  This will kill any process that runs for more than 7 days. Tractoflow has implemented a "resume" routine and we could resubmit the process when it gets killed.  This is not only inelegant but additionally the method leaves orphaned files when it is resumed after being killed.  In my testing the file count and bit count exploded drastically with only a few killed runs.  There is no on-the-fly garbage cleanup built in and so a routine would need to be implemented to take care of the cruft.  There is no slurm style checkpointing and so running it with slurm arrays is not useful.
+beluga enforces a strict 7 day limit on process run time.  This will kill any process that runs for more than 7 days. Tractoflow has implemented a "resume" routine and we could resubmit the process when it gets killed.  This is not only inelegant but additionally the method leaves orphaned files when it is resumed after being killed.  In my testing the file count and bit count exploded drastically with only a few killed runs.  There is no on-the-fly garbage cleanup built in and so a routine would need to be implemented to take care of the cruft.
 
 #### Mitigation:  ext3 writable file system images
 For each run of 4 subjects I create a 20GB ext3 filesystem image to be used to capture the output from the run. 
-
-From using a version of `mkfs.ext3` that supports the `-d directory` option this command is run to create 240 initial 20GB ext3 images:
-
-`for i in {00000..00239}; do mkfs.ext3 -d top -F -m 0 -b 4096 -N 100000 ./TF-raw-$i.img 20g; done`
-
-It may be important to set the ownerships on the `top` directory, and the top directory likely should be created on a sytem where you have root.
-
-Approximately 80 2TB ext3 images will eventually be created, one for every 480 subjects (120 runs).  When 120 runs have been completed the 120 ext3 images get mounted into a singularity container along with an empty 2TB ext3 image.  The derivative files will be rsynced from the 20GB images into the 2TB image.  This will then be saved as a squashfs image as described below: NOTE: *Describe it*
-
-rsync is run to move the files out of the work directory from each subject and into the 2TB image.  At the minimum the following file and paths need to be retained:
+The data from the ext3 images will need to be written out into squashfs images for publication for the Neurohub platform.  Below is the file structure that the final squashfs image should contain:
 
 ```
 /neurohub
@@ -89,6 +80,8 @@ rsync is run to move the files out of the work directory from each subject and i
             │   ├── ....
             ....
 ```
+There are data produced by the pipeline that is used within the pipeline but is not neccessarily required for tractometry.  At the minimum the above can be used to determine the minimum set of files and paths that need to be retained.
+
 ### Initial Sanity Check
 A very simple check was run on a set of 4 subjects.  I ran the same 4 subjects twice and then rsynced the files from their work directories into the beluga filesystem.  In the root of each set of output files I ran this simple find:
 
@@ -117,11 +110,30 @@ Guillaume ran four subjects twice and confirmed that there the runs were identic
 ## Running 
 ### Environment Setup
 #### squashfs mounts
+The followig UKBB squashfs inages are used for this pipeline:
+```
+  neurohub_ukbb_dwi_ses2_0_bids.squashfs
+  neurohub_ukbb_dwi_ses2_1_bids.squashfs
+  neurohub_ukbb_dwi_ses2_2_bids.squashfs
+  neurohub_ukbb_t1_ses2_0_bids.squashfs
+  neurohub_ukbb_t1_ses3_0_bids.squashfs
+  neurohub_ukbb_participants.squashfs
+  neurohub_ukbb_t1_ses2_0_jsonpatch.squashfs
+  ```
+  
 ##### creating
 #### symlink farms
+There are teo "symlink farms".  These are file trees made up primarily of symlinks that point into the UKBiobank BIDS file tree
 ##### creating
 #### ext3 images
 ##### creating
+From using a version of `mkfs.ext3` that supports the `-d directory` option this command is run to create 9,581 initial 20GB ext3 images:
+```
+$ cd /lustre03/project/6008063/atrefo/sherbrooke/TF_RUN/ext3_images/TF_raw 
+$ for i in {00000..09581}; do mkfs.ext3 -d top -F -m 0 -b 4096 -N 100000 ./TF-raw-$i.img 20g; done
+```
+It is important to set permissions on the `top` and `top/upper` directories, specifically they need to be world rw and must not have any extended ACLs applied.
+
 ### Submitting the batch job
 ### Monitoring
 ## Post Processing the output
@@ -257,7 +269,8 @@ The slurm logs are saved into the following directory (Lex is running the job so
 ```
 The slurm logs can be consulted for runtime errors.
 
-### Performance and Scalability
-*stuff about why 4 subjects is sweet sweet majik*
-#### Slurm Resource Allocation
-#### Sweet Spot
+### Afdter initial run - Cleanup
+I've identified a number of reasons that a run could could fail:
+#### Timeouts
+In my initial testing it took between 12 and 18 hours clock-time to run a single subject or 4 subjects.  More than 4 subjects in a simgle run could take significantly more clock time.  We began runs using 20 hour runtime requests and noted 178 TIMEOUT errors out of 1000 chunks.  We increased the runtime request to 30 hours. As of this writing (oct 20, 2021) we've seen 66 more timeouts in 2,585 runs.  All of the chunks that timed out should be rerun with a longer runtime requested.  This could be done at the end of the initial run, or could be done in parallel.  NOTE: Before rerunning a chunk the ext3 images will need to be reset and the logs from the initial run moved out of the way.
+
