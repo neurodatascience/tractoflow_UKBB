@@ -39,7 +39,7 @@ bidsOUT="${workDIR}/neurohub/ukbb/imaging"
 
 # Main loop
 
-## disabling this search so I can run scil_extract_b0.py after an interuption:
+## Disabling this search so I can run scil_extract_b0.py after an interuption.:
 # for sub in $(find ${bidsOUT} -maxdepth 1 -type d -iname "sub-*" -printf %P"\n" )
 # 
 
