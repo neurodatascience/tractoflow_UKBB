@@ -12,6 +12,10 @@ Prepares a working environment in the format that Tractoflow expects.  Specifica
 ### [scil_compute_outliers_from_avg.py](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_outliers_from_avg.py)
 ### [sanity_check.sh](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/sanity_check.sh)
 
+# Running
+The workflow can be run from scratch following the setup instructions in order, (loosley) in the section: https://github.com/neurodatascience/tractoflow_UKBB/blob/main/README.md#running-the-pipeline
+The environment includes some assumptions and some hardcoded items, like relative paths, and care should be taken with file ownership.  
+
 ## Background
 ### Issues and Solutions
 On beluga the UKBiobank dataset is stored in squashfs files and are accessed by *overlay* mounting them within a singularity container, see [NeuroHub documentation](https://github.com/neurohub/neurohub_documentation/wiki/5.2.Accessing-Data#singularity-image).  The Tractoflow pipeline requires [Nextflow](https://www.nextflow.io) to manage the pipeline.  In the default configuration Tractoflow runs within a singularity container that is launched by nextflow.  This was impossible to run with the UKBB squashed dataset.  Nextflow would not pass the `--overlay` directives down to the singularity instance.  My solution is to invert the relationship: I run a Tractoflow singularity container that includes Nextflow within it.  In this way I can overlay the squashfs files onto the container instance, define a Tractoflow friendly BIDS compliant directory at the root, and then run the Tractoflow pipeline on that.
