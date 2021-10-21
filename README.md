@@ -155,8 +155,8 @@ $ grep -w PFT_Tracking */trace.txt| wc -l
 #### Programatic Sanity Checks
 (*Etienne, please put some details in here, thanks*)
 
-Etienne St-Onge wrote a set of scripts, one to gather data about the subjects, `scil_compute_avg_in_maps.pl` and one to calculate averages and find outliers
-Here is an example comandline for runing [scil_compute_avg_in_maps.pl](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.pl)
+Etienne St-Onge wrote a set of scripts, one to gather data about the subjects, [scil_compute_avg_in_maps.pl](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.pl) and [scil_compute_outliers_from_avg.py](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_outliers_from_avg.py) which takes the output from [scil_compute_avg_in_maps.pl](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.pl) and calculated averages, finds and tags outliers
+Here is an example comand-line for runing [scil_compute_avg_in_maps.pl](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.pl)
 ```
 $ for chunk in {00100..00999} ; 
  do echo Doing ${chunk} ;
@@ -169,7 +169,7 @@ $ for chunk in {00100..00999} ;
   bin/tractoflow_UKB/sanity_check.sh; 
  done >> sanity_out/logs/scil_compute_avg_in_maps_1.log 2>&1  &
 ```
-The log file is so you can monitor how it's running.  This should/could be keyed off the subjectIDs, but you will need to know the `chunk` number, because all the ext3 images are keyted off that number.  It should/could also be turned into either a slurm batch job or tacked on to the end of the tractoflow run.
+In the script I'm redirecting stdout and stderr to the log file just so I could monitor how it was running.  The `for loop` was a convenience that I used for expediency, but this actually could be keyed off only those subjectIDs that have completed a successful run and which haven't yet been processed by this script, but in that case you would need to also find the `chunk` number because all the ext3 images are keyed off that number.  It should/could also be turned into either a slurm batch job or tacked on to the end of the tractoflow batch script and run right after tractoflow completes, but that would have mneant cancelling the running job submissions.
 
 I've done a preliminary run of that script, the results can be found in:
 ```
