@@ -21,13 +21,20 @@ The environment includes some assumptions and some hardcoded items, like relativ
 On beluga the UKBiobank dataset is stored in squashfs files and are accessed by *overlay* mounting them within a singularity container, see [NeuroHub documentation](https://github.com/neurohub/neurohub_documentation/wiki/5.2.Accessing-Data#singularity-image).  The Tractoflow pipeline requires [Nextflow](https://www.nextflow.io) to manage the pipeline.  In the default configuration Tractoflow runs within a singularity container that is launched by nextflow.  This was impossible to run with the UKBB squashed dataset.  Nextflow would not pass the `--overlay` directives down to the singularity instance.  My solution is to invert the relationship: I run a Tractoflow singularity container that includes Nextflow within it.  In this way I can overlay the squashfs files onto the container instance, define a Tractoflow friendly BIDS compliant directory at the root, and then run the Tractoflow pipeline on that.
 
 #### DWI Correction
-(*Etienne, could you please make this make some sense?  Thanks!*)
-Initially I was not able to get a complete run of Tractoflow on the UKBB BIDS dataset.  It failed, according to Arnaud, because tractoflow is not ready yet for a full AP/PA dwi correction and ends up with conflicts. He suggested that I do the following:
+Initially, We were not able to get a complete run of Tractoflow on the UKBB BIDS dataset. (TOPUP correction did not work)
+According to Arnaud, "because tractoflow is not ready yet for a full AP/PA dwi correction and ends up with conflicts". 
+He suggested that I do the following:
 	
 Choose which direction (AP or PA) will be the "main" direction.
 1. use `scil_extract_b0.py` that's included in the Tractoflow singularity container to extract the file called `fmap/sub-*_epi.nii.gz`. 
 2. Remove the "old", `PA` direction files from `/dwi`
 3. Create a json file for this new file with the `IntendedFor` key pointing to the subject's `/dwi`
+
+### Topup fix
+However, we realized that there is "Full AP" and the PA is only 6 volumes (3 b0s, and the pure x y z direction).
+So we used a script "scil_extract_b0.py" to extract and average the 3 b0s from the PA image.
+And we modified the associated jsonfile according to Tractoflow requirement.
+
 
 Squashfs files are by design read-only, so to make this work I created the symlink tree `/scratch/atrefo/sherbrooke/symtree`, illustrated below, and performed those operations into that tree using the `tf_ukbb_bids_prep.sh` script.
 
@@ -157,10 +164,8 @@ $ grep -w PFT_Tracking */trace.txt| wc -l
 ```
 
 #### Programatic Sanity Checks
-(*Etienne, please put some details in here, thanks*)
-
-Etienne St-Onge wrote a set of scripts, one to gather data about the subjects, [scil_compute_avg_in_maps.pl](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.pl) and [scil_compute_outliers_from_avg.py](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_outliers_from_avg.py) which takes the output from [scil_compute_avg_in_maps.pl](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.pl) and calculated averages, finds and tags outliers
-Here is an example comand-line for runing [scil_compute_avg_in_maps.pl](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.pl)
+Etienne St-Onge wrote a set of scripts, one to gather data about the subjects, [scil_compute_avg_in_maps.py](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.py) and [scil_compute_outliers_from_avg.py](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_outliers_from_avg.py) which takes the output from [scil_compute_avg_in_maps.py](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.py) and calculated averages and variance, to afterward finds and tags outliers (based on z-score).
+Here is an example comand-line for runing [scil_compute_avg_in_maps.py](https://github.com/StongeEtienne/scilpy/blob/avg_in_roi/scripts/scil_compute_avg_in_maps.py)
 ```
 $ for chunk in {00100..00999} ; 
  do echo Doing ${chunk} ;
@@ -173,7 +178,7 @@ $ for chunk in {00100..00999} ;
   bin/tractoflow_UKB/sanity_check.sh; 
  done >> sanity_out/logs/scil_compute_avg_in_maps_1.log 2>&1  &
 ```
-In the script I'm redirecting stdout and stderr to the log file just so I could monitor how it was running.  The `for loop` was a convenience that I used for expediency, but this actually could be keyed off only those subjectIDs that have completed a successful run and which haven't yet been processed by this script, but in that case you would need to also find the `chunk` number because all the ext3 images are keyed off that number.  It should/could also be turned into either a slurm batch job or tacked on to the end of the tractoflow batch script and run right after tractoflow completes, but that would have mneant cancelling the running job submissions.
+In the script, I'm redirecting stdout and stderr to the log file just so I could monitor how it was running.  The `for loop` was a convenience that I used for expediency, but this actually could be keyed off only those subjectIDs that have completed a successful run and which haven't yet been processed by this script, but in that case you would need to also find the `chunk` number because all the ext3 images are keyed off that number.  It should/could also be turned into either a slurm batch job or tacked on to the end of the tractoflow batch script and run right after tractoflow completes, but that would have mneant cancelling the running job submissions.
 
 I've done a preliminary run of that script, the results can be found in:
 ```
